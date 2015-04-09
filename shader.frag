@@ -13,8 +13,8 @@
 const vec3 lightPos = vec3 (5.0, 5.0, 5.0);
 const vec3 matAlbedo = vec3 (0.6, 0.6, 0.6);
 const float Pi = 3.14159265359;
-const float coeffFresnel = 0.4;
-uniform float maVariable = 0.3;
+const float coeffFresnel = 0.90;
+float roughness = 0.3;
 
 varying vec4 P; // fragment-wise position
 varying vec3 N; // fragment-wise normal
@@ -31,7 +31,7 @@ void main (void)
 
     
     // ---------- Code to change -------------
-    float alpha = maVariable * maVariable;
+    float alpha = roughness * roughness;
     vec3 fd = matAlbedo / Pi;
     float coef = 1.0 + (alpha - 1.0) * dot(n, h) * dot(n, h);
     float D = alpha / (Pi * coef * coef);
@@ -48,8 +48,8 @@ void main (void)
                (dot(n, v) + sqrt(alpha + (1.0 - alpha) * dot(n, v) * dot(n, v)));
 
     float fs = D * F * G1 * G2 / (4.0 * dot (n, l) * dot(n, v));
-    vec3 f = vec3(fs, fs, fs) + fd;
-    vec4 color = vec4 (fs + fd, 1.0);
+    vec3 f = vec3(fs, fs, fs) + (1.0 - G1 * G2) * fd;
+    vec4 color = vec4 (f, 1.0);
     // ----------------------------------------
     fragColor += color;
 
