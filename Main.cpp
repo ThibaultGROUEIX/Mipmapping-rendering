@@ -33,7 +33,7 @@ static bool fullScreen = false;
 
 static Camera camera;
 static Mesh mesh;
-static float roughness = 0.2;
+static float roughness = 0.3;
 Program * glProgram;
 
 void printUsage () {
@@ -66,12 +66,15 @@ void init (const char * modelFilename) {
   try {
     glProgram = Program::genVFProgram ("Simple GL Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
     glProgram->use (); // Activate the shader program
+     //va falloir trouver la valeur adéquat du program object
+    glProgram->Program::setUniform1f("roughness_shader", roughness);
   } catch (Exception & e) {
     cerr << e.msg () << endl;
   }
 }
 
 void drawScene () {
+
   glBegin (GL_TRIANGLES);
   for (unsigned int i = 0; i < mesh.T.size (); i++) 
     for (unsigned int j = 0; j < 3; j++) {
@@ -107,16 +110,22 @@ void key (unsigned char keyPressed, int x, int y) {
     break;
   case 'q':
   case 27:
-  case'+' :
+      exit (0);
+      break;
+  case '+' :
+    {
     roughness  = -max(-1.0, -roughness-0.05);
-    Program::setUniform1f(maVariable,roughness);
+    std::cout << roughness;
+    glProgram->Program::setUniform1f("roughness_shader", roughness);
     break;
-  case'-' : 
+    }
+
+  case '-' : 
+  {
     roughness  = max(0.0, roughness-0.05);
-    Program::setUniform1f(maVariable,roughness);
+    //Program::setUniform1f(maVariable,roughness);
     break;
-    exit (0);
-    break;
+  }
   case 'w':
     GLint mode[2];
     glGetIntegerv (GL_POLYGON_MODE, mode);

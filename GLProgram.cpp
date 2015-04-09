@@ -172,10 +172,18 @@
         }
 
         GLint Program::getUniformLocation (const std::string & uniformName) {
+
             const GLchar * cname = uniformName.c_str ();
             GLint loc = glGetUniformLocation (_id, cname);
-            if (loc == -1)
+            std::cout << "not found ou est tu youhhhou !!!! " << std::endl ;
+            std::cout << "loc : " << loc << std::endl ;
+
+            if (loc == -1){
+                std::cout << "not found ou est tu youhou !!!! " << std::endl ;
                 throw Exception (std::string ("Program Error: No such uniform named ") + uniformName);
+            }
+            std::cout << "loc2 : " << loc << std::endl ;
+
             printOpenGLError ("Wrong Uniform Variable [" + uniformName + "] for Program [" + name () + "]");
             return loc;
         }
@@ -187,7 +195,15 @@
 
         void Program::setUniform1f (const std::string & name, float value) {
             use ();
-            glUniform1f (getUniformLocation (name), value);
+            try {
+                std::cout << "id : " << id() << std::endl;
+                std::cout << "location: " << std::endl;
+                std::cout << getUniformLocation (name.c_str()) << std::endl; 
+                glUniform1f (getUniformLocation (name), value);
+            }
+            catch(Exception e){
+                std::cout << e.msg()<< std::endl;
+                }
         }
 
         void Program::setUniform2f (GLint location, float value0, float value1) {

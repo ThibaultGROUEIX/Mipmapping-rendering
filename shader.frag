@@ -13,8 +13,8 @@
 const vec3 lightPos = vec3 (5.0, 5.0, 5.0);
 const vec3 matAlbedo = vec3 (0.6, 0.6, 0.6);
 const float Pi = 3.14159265359;
-const float coeffFresnel = 0.90;
-float roughness = 0.3;
+float coeffFresnel = 0.90;
+uniform float roughness_shader;
 
 varying vec4 P; // fragment-wise position
 varying vec3 N; // fragment-wise normal
@@ -31,7 +31,7 @@ void main (void)
 
     
     // ---------- Code to change -------------
-    float alpha = roughness * roughness;
+    float alpha = roughness_shader * roughness_shader;
     vec3 fd = matAlbedo / Pi;
     float coef = 1.0 + (alpha - 1.0) * dot(n, h) * dot(n, h);
     float D = alpha / (Pi * coef * coef);
