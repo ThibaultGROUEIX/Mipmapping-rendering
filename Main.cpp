@@ -19,6 +19,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "GLProgram.h"
+#include "render.h"
 
 using namespace std;
 
@@ -30,11 +31,12 @@ static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pr
 static GLint window;
 static unsigned int FPS = 0;
 static bool fullScreen = false;
-
+static bool rotateLight = false;
+static float rotateLightAngle = 0.0;
 static Camera camera;
 static Mesh mesh;
-static float roughness = 0.3;
-Program * glProgram;
+Program * glFirstPass;
+Program * glSecondPass;
 
 void printUsage () {
   std::cerr << std::endl 
@@ -51,39 +53,7 @@ void printUsage () {
 	    << " q, <esc>: Quit" << std::endl << std::endl; 
 }
 
-void init (const char * modelFilename) {
-  glewInit();
-  glCullFace (GL_BACK);     // Specifies the faces to cull (here the ones pointing away from the camera)
-  glEnable (GL_CULL_FACE); // Enables face culling (based on the orientation defined by the CW/CCW enumeration).
-  glDepthFunc (GL_LESS); // Specify the depth test for the z-buffer
-  glEnable (GL_DEPTH_TEST); // Enable the z-buffer in the rasterization
-  glLineWidth (2.0); // Set the width of edges in GL_LINE polygon mode
-  glClearColor (0.0f, 0.0f, 0.0f, 1.0f); // Background color
-  glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
-	
-  camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
-  mesh.loadOFF (modelFilename); // Load a mesh file
-  try {
-    glProgram = Program::genVFProgram ("Simple GL Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
-    glProgram->use (); // Activate the shader program
-     //va falloir trouver la valeur adéquat du program object
-    glProgram->Program::setUniform1f("roughness_shader", roughness);
-  } catch (Exception & e) {
-    cerr << e.msg () << endl;
-  }
-}
 
-void drawScene () {
-
-  glBegin (GL_TRIANGLES);
-  for (unsigned int i = 0; i < mesh.T.size (); i++) 
-    for (unsigned int j = 0; j < 3; j++) {
-      const Vertex & v = mesh.V[mesh.T[i].v[j]];
-      glNormal3f (v.n[0], v.n[1], v.n[2]); // Specifies current normal vertex   
-      glVertex3f (v.p[0], v.p[1], v.p[2]); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
-    }
-  glEnd (); 
-}
 
 void reshape(int w, int h) {
   camera.resize (w, h);
@@ -92,7 +62,7 @@ void reshape(int w, int h) {
 void display () {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   camera.apply (); 
-  drawScene ();
+  render::drawScene ();
   glFlush ();
   glutSwapBuffers (); 
 }
@@ -114,16 +84,48 @@ void key (unsigned char keyPressed, int x, int y) {
       break;
   case '+' :
     {
-    roughness  = -max(-1.0, -roughness-0.05);
-    std::cout << roughness;
-    glProgram->Program::setUniform1f("roughness_shader", roughness);
+    GLfloat panams;
+    glFirstPass->Program::getUniform("roughness_shader", &panams);
+    panams  = -max(-1.0, -panams-0.05);
+    glFirstPass->Program::setUniform1f("roughness_shader", panams);
+    std::cout << "roughness : " <<  panams <<std::endl;
     break;
     }
 
   case '-' : 
   {
-    roughness  = max(0.0, roughness-0.05);
-    //Program::setUniform1f(maVariable,roughness);
+    GLfloat panams;
+    glFirstPass->Program::getUniform("roughness_shader", &panams);
+    panams  = max(0.0, panams-0.05);
+    std::cout << panams;
+    glFirstPass->Program::setUniform1f("roughness_shader", panams);
+    std::cout << "roughness : " <<  panams <<std::endl;
+
+    break;
+  }
+    case 'a' : 
+  {
+    GLfloat panams;
+    glFirstPass->Program::getUniform("coeffFresnel", &panams);
+    panams  = max(0.0, panams-0.05);
+    std::cout << panams;
+    glFirstPass->Program::setUniform1f("coeffFresnel", panams);
+    std::cout << "coeffFresnel : " <<  panams <<std::endl;
+
+    break;
+  }
+  case 'z' :
+    {
+    GLfloat panams;
+    glFirstPass->Program::getUniform("coeffFresnel", &panams);
+    panams  = -max(-1.0, -panams-0.05);
+    glFirstPass->Program::setUniform1f("coeffFresnel", panams);
+    std::cout << "coeffFresnel : " <<  panams <<std::endl;
+    break;
+    }
+     case 'r' : 
+     {
+    rotateLight = true;
     break;
   }
   case 'w':
@@ -136,6 +138,8 @@ void key (unsigned char keyPressed, int x, int y) {
     printUsage ();
     break;
   }
+
+
 }
 
 void mouse (int button, int state, int x, int y) {
@@ -168,11 +172,16 @@ int main (int argc, char ** argv) {
     printUsage ();
     exit (1);
   }
+
+  RenderingInfo renderInfo;
+  renderInfo.width = DEFAULT_SCREENWIDTH;
+  renderInfo.height = DEFAULT_SCREENHEIGHT;
+  renderInfo.modelFileName = DEFAULT_MESH_FILE.c_str ();
   glutInit (&argc, argv);
   glutInitDisplayMode (GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
   glutInitWindowSize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
   window = glutCreateWindow (appTitle.c_str ());
-  init (argc == 2 ? argv[1] : DEFAULT_MESH_FILE.c_str ());
+  render::init (renderInfo);
   glutIdleFunc (idle);
   glutReshapeFunc (reshape);
   glutDisplayFunc (display);

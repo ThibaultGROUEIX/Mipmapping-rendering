@@ -1,3 +1,9 @@
+#ifndef GLPROGRAM
+#define GLPROGRAM
+
+
+
+
 // --------------------------------------------------------------------------
 // OpenGL Program Class
 // Copyright(C) 2007-2015
@@ -57,6 +63,7 @@ public:
   void use ();
   static void stop ();
   GLint getUniformLocation (const std::string & uniformName);
+  void getUniform(const std::string & name, GLfloat * panams);
   void setUniform1f (GLint location, float value);
   void setUniform1f (const std::string & name, float value);
   void setUniform2f (GLint location, float value0, float value1);
@@ -78,6 +85,14 @@ public:
   static Program * genVFProgram (const std::string & name,
 				 const std::string & vertexShaderFilename,
 				 const std::string & fragmentShaderFilename);
+
+  static Program * genFirstPassProgram (const std::string & name,
+     const std::string & vertexShaderFilename,
+     const std::string & fragmentShaderFilename);
+
+  static Program * genSecondPassProgram (const std::string & name,
+     const std::string & vertexShaderFilename,
+     const std::string & fragmentShaderFilename);
  protected:
   std::string infoLog ();
  private:
@@ -85,3 +100,6 @@ public:
   std::string _name;
   std::vector<Shader*>_shaders;
 };
+
+
+#endif

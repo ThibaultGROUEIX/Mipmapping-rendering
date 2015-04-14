@@ -83,7 +83,7 @@
         }
 
         void Shader::loadFromFile (const std::string & filename) {
-            _filename = filename;
+            _filename = "./shader/" + filename;
             std::ifstream in (_filename.c_str ());
             if (!in)
                 throw Exception ("Error loading shader source file: " + _filename);
@@ -175,18 +175,19 @@
 
             const GLchar * cname = uniformName.c_str ();
             GLint loc = glGetUniformLocation (_id, cname);
-            std::cout << "not found ou est tu youhhhou !!!! " << std::endl ;
-            std::cout << "loc : " << loc << std::endl ;
-
             if (loc == -1){
-                std::cout << "not found ou est tu youhou !!!! " << std::endl ;
-                throw Exception (std::string ("Program Error: No such uniform named ") + uniformName);
+               // throw Exception (std::string ("Program Error: No such uniform named ") + uniformName);
             }
-            std::cout << "loc2 : " << loc << std::endl ;
 
             printOpenGLError ("Wrong Uniform Variable [" + uniformName + "] for Program [" + name () + "]");
             return loc;
         }
+
+        void  Program::getUniform(const std::string & name, GLfloat * panams)
+        {   
+                glGetUniformfv(id(), getUniformLocation (name.c_str()), panams);
+        } 
+
 
         void Program::setUniform1f (GLint location, float value) {
             use ();
@@ -196,9 +197,6 @@
         void Program::setUniform1f (const std::string & name, float value) {
             use ();
             try {
-                std::cout << "id : " << id() << std::endl;
-                std::cout << "location: " << std::endl;
-                std::cout << getUniformLocation (name.c_str()) << std::endl; 
                 glUniform1f (getUniformLocation (name), value);
             }
             catch(Exception e){
@@ -245,6 +243,7 @@
             use ();
             setUniformMatrix4fv (getUniformLocation (name), values);
         }
+
 
         void Program::setUniformNf (GLint location, unsigned int numValues, const float * values) {
             use ();
