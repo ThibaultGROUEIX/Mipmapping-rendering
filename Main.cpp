@@ -6,7 +6,8 @@
 // All rights reserved.
 // ----------------------------------------------
 #include <GL/glew.h>
-#include <GL/glut.h>
+// #include <GL/gl.h>
+#include <GL/freeglut.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -21,22 +22,28 @@
 #include "GLProgram.h"
 #include "render.h"
 
+
+#include <pthread.h>
+void junk() {
+int i;
+i = pthread_getconcurrency();
+};
+
 using namespace std;
 
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;
 static const unsigned int DEFAULT_SCREENHEIGHT = 768;
-static const string DEFAULT_MESH_FILE ("models/man.off");
+static const string DEFAULT_MESH_FILE ("material/models/man.off");
 
 static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pratiques - Shaders");
 static GLint window;
 static unsigned int FPS = 0;
 static bool fullScreen = false;
 static bool rotateLight = false;
-static float rotateLightAngle = 0.0;
+//static float rotateLightAngle = 0.0;
 static Camera camera;
 static Mesh mesh;
-Program * glFirstPass;
-Program * glSecondPass;
+Render * renderTime;
 
 void printUsage () {
   std::cerr << std::endl 
@@ -60,9 +67,10 @@ void reshape(int w, int h) {
 }
 
 void display () {
-  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  //ce serait cool si je comprenais ce qu'il se passe dans mon display...
+  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //  Je comprends pas pourquoi ca clignote !
   camera.apply (); 
-  render::drawScene ();
+  renderTime->drawScene ();
   glFlush ();
   glutSwapBuffers (); 
 }
@@ -83,22 +91,22 @@ void key (unsigned char keyPressed, int x, int y) {
       exit (0);
       break;
   case '+' :
-    {
+     {
     GLfloat panams;
-    glFirstPass->Program::getUniform("roughness_shader", &panams);
+    renderTime->pRInfo.secondPass->Program::getUniform("roughness_shader", &panams);
     panams  = -max(-1.0, -panams-0.05);
-    glFirstPass->Program::setUniform1f("roughness_shader", panams);
+    renderTime->pRInfo.secondPass->Program::setUniform1f("roughness_shader", panams);
     std::cout << "roughness : " <<  panams <<std::endl;
-    break;
+     break;
     }
 
   case '-' : 
   {
     GLfloat panams;
-    glFirstPass->Program::getUniform("roughness_shader", &panams);
+    renderTime->pRInfo.secondPass->Program::getUniform("roughness_shader", &panams);
     panams  = max(0.0, panams-0.05);
     std::cout << panams;
-    glFirstPass->Program::setUniform1f("roughness_shader", panams);
+    renderTime->pRInfo.secondPass->Program::setUniform1f("roughness_shader", panams);
     std::cout << "roughness : " <<  panams <<std::endl;
 
     break;
@@ -106,10 +114,10 @@ void key (unsigned char keyPressed, int x, int y) {
     case 'a' : 
   {
     GLfloat panams;
-    glFirstPass->Program::getUniform("coeffFresnel", &panams);
+    renderTime->pRInfo.secondPass->Program::getUniform("coeffFresnel", &panams);
     panams  = max(0.0, panams-0.05);
     std::cout << panams;
-    glFirstPass->Program::setUniform1f("coeffFresnel", panams);
+    renderTime->pRInfo.secondPass->Program::setUniform1f("coeffFresnel", panams);
     std::cout << "coeffFresnel : " <<  panams <<std::endl;
 
     break;
@@ -117,9 +125,9 @@ void key (unsigned char keyPressed, int x, int y) {
   case 'z' :
     {
     GLfloat panams;
-    glFirstPass->Program::getUniform("coeffFresnel", &panams);
+    renderTime->pRInfo.secondPass->Program::getUniform("coeffFresnel", &panams);
     panams  = -max(-1.0, -panams-0.05);
-    glFirstPass->Program::setUniform1f("coeffFresnel", panams);
+    renderTime->pRInfo.secondPass->Program::setUniform1f("coeffFresnel", panams);
     std::cout << "coeffFresnel : " <<  panams <<std::endl;
     break;
     }
@@ -177,11 +185,21 @@ int main (int argc, char ** argv) {
   renderInfo.width = DEFAULT_SCREENWIDTH;
   renderInfo.height = DEFAULT_SCREENHEIGHT;
   renderInfo.modelFileName = DEFAULT_MESH_FILE.c_str ();
+  renderTime = new Render(renderInfo, &camera, &mesh);
+
   glutInit (&argc, argv);
-  glutInitDisplayMode (GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
+  glutInitContextVersion (3, 0);
+  // glutInitContextFlags (GLUT_CORE_PROFILE);
+  // glutInitContextFlags (GLUT_FORWARD_COMPATIBLE);
+  glutInitContextProfile (GLUT_CORE_PROFILE);
+  glutInitDisplayMode(GLUT_DOUBLE);
   glutInitWindowSize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
   window = glutCreateWindow (appTitle.c_str ());
-  render::init (renderInfo);
+  std::cout << "init de glew renvoie : " << glewInit() << std::endl;
+
+
+  renderTime->init ();
+  std::cout << "Initialisation réussie" << std::endl;
   glutIdleFunc (idle);
   glutReshapeFunc (reshape);
   glutDisplayFunc (display);

@@ -1,28 +1,77 @@
 #include "render.h"
 
+static const unsigned int DEFAULT_SCREENWIDTH = 1024;
+static const unsigned int DEFAULT_SCREENHEIGHT = 768;
+static Matrix4 inverseTransposeProjectionMatrix = Matrix4();
+
+char checkError(const char* placeName)
+{
+    GLenum glError = glGetError(); // Recupere les erreurs OpenGL
+    char message[100] = {'\0'}; // Un peu dangereux, mais supposons que nos messages ne sont pas plus long que 100 char
+
+    assert(placeName != NULL);
+
+    switch (glError)
+    {
+        case GL_NO_ERROR:
+                return 0;
+                break;
+
+        case GL_INVALID_ENUM:
+            strcpy(message,"Invalid enumerator");
+            break;
+
+        case GL_INVALID_VALUE:
+            strcpy(message,"Invalid value");
+            break;
+
+        case GL_INVALID_OPERATION:
+            strcpy(message,"Invalid operation");
+            break;
+
+        case GL_OUT_OF_MEMORY:
+            strcpy(message,"Out of memory");
+            break;
+
+        // Cas special pour les FBO
+        case GL_INVALID_FRAMEBUFFER_OPERATION_EXT:
+            strcpy(message,"Invalid Framebuffer operation");
+            break;
+
+        default:
+            sprintf(message,"Unknown GL error (0x%ix)",glError);
+            break;
+    }
+
+    fprintf(stderr,"%s for %s\n",message,placeName);
+
+    return 1;
+}
 
 
-void init (RenderingInfo* pRInfo) {
+char Render::init () {
 
 
 
   char error = 0;
-  assert(pRInfo);
+  //assert(pRInfo);
 
     
   //Initialisation du FBO
 
-    error |= initTextureColour(&pRInfo->textureCouleur,pRInfo->width,pRInfo->height);
-    error |= initTextureColour(&pRInfo->textureNormal,pRInfo->width,pRInfo->height);
-    error |= initTextureDepth(&pRInfo->textureDepth,pRInfo->width,pRInfo->height);
+    error |= initTextureColour(&pRInfo.textureCouleur,pRInfo.width,pRInfo.height);
+        std::cout << error << std::endl;
 
-    //init la deusieme texture
-    error |= initFBO(&pRInfo->buffer,&pRInfo->textureDepth, &pRInfo->textureNormal, &pRInfo->textureCouleur, pRInfo->width, pRInfo->height);
+    error |= initTextureColour(&pRInfo.textureNormal,pRInfo.width,pRInfo.height);
+    error |= initTextureColour(&pRInfo.texturePosition,pRInfo.width,pRInfo.height);
+
+    error |= initTextureDepth(&pRInfo.textureDepth,pRInfo.width,pRInfo.height);
+    //init la deuxieme texture
+    error |= initFBO(&(pRInfo.buffer),&pRInfo.textureDepth, &pRInfo.textureNormal, &pRInfo.textureCouleur, &pRInfo.texturePosition, pRInfo.width, pRInfo.height);
 
 
   //initialisation random
 
-  glewInit();
   glCullFace (GL_BACK);     // Specifies the faces to cull (here the ones pointing away from the camera)
   glEnable (GL_CULL_FACE); // Enables face culling (based on the orientation defined by the CW/CCW enumeration).
   glDepthFunc (GL_LESS); // Specify the depth test for the z-buffer
@@ -32,32 +81,34 @@ void init (RenderingInfo* pRInfo) {
 	
 
   //initialisation du Mesh
-  camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
-  mesh.loadOFF (pRinfo->modelFilename); // Load a mesh file
+  pRInfo.camera->resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
+  pRInfo.mesh->loadOFF (pRInfo.modelFileName); // Load a mesh file
 
 
   try {
 
   //initialisation du Premier Programme
-  pRInfo->firstPass = Program::genVFProgram ("Simple fist pass Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
-  pRInfo->firstPass->use (); // Activate the shader program
-  pRInfo->firstPass->Program::setUniform1f("roughness_shader", 0.3);
-  pRInfo->firstPass->Program::setUniform1f("coeffFresnel", 0.04);
-  pRInfo->firstPass->Program::setUniform3f("lightPos", 0.5,0.5,0.5);
-  pRInfo->firstPass->Program::setUniform3f("matAlbedo",0.5,0.5,0.5);
-
+  pRInfo.firstPass = Program::genVFProgram ("Simple fist pass Program", "shader1.vert.glsl", "shader1.frag.glsl"); // Load and compile pair of shaders
+  pRInfo.firstPass->use (); // Activate the shader program
+  pRInfo.firstPass->Program::setUniform4f("matAlbedo",1.,1.,1.,1.);
+  glUseProgram(0);
   //initialisation  du Second Programme
-  pRInfo->secondPass = Program::genVFProgram ("Simple second pass Program", "shader.vert2", "shader.frag2"); // Load and compile pair of shaders
-
+  pRInfo.secondPass = Program::genVFProgram ("Simple second pass Program", "shader2.vert.glsl", "shader2.frag.glsl"); // Load and compile pair of shaders
+  pRInfo.secondPass->use ();
+  pRInfo.secondPass->Program::setUniform1f("roughness_shader", 0.3);
+  pRInfo.secondPass->Program::setUniform1f("coeffFresnel", 0.9);
+  pRInfo.secondPass->Program::setUniform4f("lightPos", 0.5,0.5,0.5,0.5);
 
   } catch (Exception & e) {
-    cerr << e.msg () << endl;
+    std::cout << e.msg () << std::endl;
+        std::cout << "Je suis la" << std::endl;
+
   }
 
   return error;
 
 }
-char initTextureColour(GLuint* pTextureID, unsigned int width, unsigned int height)
+char Render::initTextureColour(GLuint* pTextureID, unsigned int width, unsigned int height)
 {
     char error = 0;
 
@@ -77,6 +128,7 @@ char initTextureColour(GLuint* pTextureID, unsigned int width, unsigned int heig
     error |= checkError("glTexParameterf");
     // On alloue un espace pour les futures donnees
     // ici on définit le format de la texture, ici ca va pas puisque moi je veux récupérer les normales et la depth donc la couleur m'interresse pas...
+    std::cout << width << " width " << height << " height " << std::endl;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     error |= checkError("glTexImage2D");
 
@@ -87,7 +139,7 @@ char initTextureColour(GLuint* pTextureID, unsigned int width, unsigned int heig
     return error;
 }
 
-char initTextureDepth(GLuint* pTextureID, unsigned int width, unsigned int height)
+char Render::initTextureDepth(GLuint* pTextureID, unsigned int width, unsigned int height)
 {
     char error = 0;
 
@@ -108,7 +160,7 @@ char initTextureDepth(GLuint* pTextureID, unsigned int width, unsigned int heigh
     // On alloue un espace pour les futures donnees
     // ici on définit le format de la texture, ici ca va pas puisque moi je veux récupérer les normales et la depth donc la couleur m'interresse pas...
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
     error |= checkError("glTexImage2D");
 
     //on debind la texture (machine à état)
@@ -118,30 +170,34 @@ char initTextureDepth(GLuint* pTextureID, unsigned int width, unsigned int heigh
     return error;
 }
 
-char initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GLuint * pTextureCouleur, unsigned int width, unsigned int height)
+char Render::initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GLuint * pTextureCouleur, GLuint * pTexturePosition, unsigned int width, unsigned int height)
 {
     char error = 0;
 
     assert(pBuffer);
-    assert(pRenderBuffer);
-    assert(pTexture);
+    assert(pDepth);
+    assert(pTextureCouleur);
+    assert(pTextureNormal);
     //on génère un FBO, dont l'index est contenu dans pBuffer
     glGenFramebuffers(1, pBuffer);
-
-  
+ 
 
     // Attachement des donnees au FBO
     glBindFramebuffer(GL_FRAMEBUFFER,*pBuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, *pDepth);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, *pDepth,0);
     error |= checkError("glFramebufferTexture2D");
     error |= checkError("glBindFramebuffer(FBO)");
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *pTextureNormal, 0);
     error |= checkError("glFramebufferTexture2D");
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, *pTexturePosition, 0);
+    error |= checkError("glFramebufferTexture2D");
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, *pTextureCouleur, 0);
     error |= checkError("glFramebufferTexture2D");
     glDrawBuffer(GL_COLOR_ATTACHMENT1);
-
-
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+      std::cout << "gros pb" << std::endl;
+    }
     //on débind le FBO (machine à état...)
     glBindFramebuffer(GL_FRAMEBUFFER,0);
     error |= checkError("glBindFramebuffer(0)");
@@ -151,27 +207,30 @@ char initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GLuint * p
 
 
 
-void drawScene (RenderingInfo* pRInfo) {
+void Render::drawScene () {
 //First Pass
 
   {
   // Active le rendering dans le FBO (donc, dans une texture)
-  glBindFramebuffer(GL_FRAMEBUFFER,pRInfo->buffer);
+  pRInfo.firstPass->use();
+    glClearColor(0.0f,0.0f,0.0f,1.0f);
 
-  // Efface le buffer
-  glClearColor(0.4f,0.0f,0.0f,1.0f);
+  glBindFramebuffer(GL_FRAMEBUFFER,pRInfo.buffer);
+  GLenum drawbuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2 };
+  glDrawBuffers(3, drawbuffers);
   glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT );
+  ////////////////////////////////// A ce stade il devrait y avoir du bleu dans mes normals.!
+  glViewport(0,0,pRInfo.width,pRInfo.height);
 
-  pRInfo->firstPass->use();
-  if(rotateLight)
-  {  
-    rotateLightAngle+=0.05;
-    glFirstPass->Program::setUniform3f("lightPos", cos(rotateLightAngle),0.5,sin(rotateLightAngle));
-  }
+  // if(rotateLight)
+  // {  
+  //   rotateLightAngle+=0.05;
+  //   pRInfo.firstPass->Program::setUniform3f("lightPos", cos(rotateLightAngle),0.5,sin(rotateLightAngle));
+  // }
   glBegin (GL_TRIANGLES);
-  for (unsigned int i = 0; i < mesh.T.size (); i++) 
+  for (unsigned int i = 0; i < pRInfo.mesh->T.size (); i++) 
     for (unsigned int j = 0; j < 3; j++) {
-      const Vertex & v = mesh.V[mesh.T[i].v[j]];
+      const Vertex & v = pRInfo.mesh->V[pRInfo.mesh->T[i].v[j]];
       //glattrib manuel
       //glTexCoor...
       //glColor3f()
@@ -183,103 +242,158 @@ void drawScene (RenderingInfo* pRInfo) {
 }
 //second Pass
 {    // On passe sur l'ecran
+
+    pRInfo.secondPass->use();
+
+
+    GLfloat model[16]; 
+    glGetFloatv(GL_PROJECTION_MATRIX, model);
+    inverseTransposeProjectionMatrix = Matrix4(model);
+    inverseTransposeProjectionMatrix.invert();
+    //inverseTransposeProjectionMatrix.transpose();
+
+
+
     glBindFramebuffer(GL_FRAMEBUFFER,0);
-
-
-    // Efface le buffer
-    glClearColor(0.0f,0.4f,0.0f,1.0f);
+    glClearColor(1.f,0.f,0.0f,1.0f);
     glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT );
 
-    GLint idPosition;
-    GLint idTextureCoords;
+   // Recuperation de l'id de l'uniform
 
-    // Recuperation de l'id de l'uniform
-    GLint idTextureNormal = glGetUniformLocation(pRInfo->programShaderP2,"fboTexNormal");
-    GLint idTextureDepth = glGetUniformLocation(pRInfo->programShaderP2,"fboTexColor");
-    GLint idTextureColor = glGetUniformLocation(pRInfo->programShaderP2,"fboTexDepth");
+    GLint idInverseTransposeProjectionMatrix = glGetUniformLocation(pRInfo.secondPass->id(), "inverseTransposeProjectionMatrix");
+    GLint idTextureNormal = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexNormal");
+    GLint idTextureColor = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexColor");
+    GLint idTextureDepth = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexDepth");
+    GLint idTexturePosition = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexPosition");
+    
 
+    if ( idTextureNormal == -1 )
+      {        fprintf(stderr,"Error while getting the uniform 'fboTexNormal'\n");
+     }
+    if(idTextureColor == -1 )
+      {        fprintf(stderr,"Error while getting the uniform 'fboTexColor'\n");
 
-    if ( idTextureNormal == -1 || idTextureColor == -1 || idTextureDepth == -1)
+      }
+      if(idTextureDepth == -1)
     {
-        fprintf(stderr,"Error while getting the uniform 'fboTex'\n");
+        fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
     }
-    //pareil depth
-    glSecondPass->use();
 
-    // Recuperation des id pour les attributes
-      idPosition = glGetAttribLocation(pRInfo->programShaderP2,"position");
-      if ( idPosition == -1 )
-      {
-          fprintf(stderr,"Error while getting the attrib 'position'\n");
-      }
-      checkError("glGetAttribLocation(position)");
+      if(idInverseTransposeProjectionMatrix == -1)
+    {
+        fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
+    }
 
-      idTextureCoords = glGetAttribLocation(pRInfo->programShaderP2,"texCoord");
-      if ( idTextureCoords == -1 )
-      {
-          fprintf(stderr,"Error while getting the attrib 'texCoord'\n");
-      }
-      checkError("glGetAttribLocation(texCoord)");
+        if(idTexturePosition == -1)
+    {
+        fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
+    }
 
 
-      // Indique la texture au shader
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D,pRInfo->textureDepth);
-      glUniform1i(idTextureDepth,0);
+      //Assigne la variable inverse transposée de la matrice de projection du fragment shader
+      pRInfo.secondPass->Program::setUniformMatrix4fv(idInverseTransposeProjectionMatrix,inverseTransposeProjectionMatrix.get());
+      //Indique la texture au shader
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(GL_TEXTURE_2D,pRInfo.textureDepth);
+      glUniform1i(idTextureDepth,2);
       checkError("glUniform1ui()");
       
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D,pRInfo->textureNormal);
-      glUniform1i(idTextureNormal,1);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D,pRInfo.textureNormal);
+      glUniform1i(idTextureNormal,0);
       checkError("glUniform1ui()");
 
-      glActiveTexture(GL_TEXTURE2);
-      glBindTexture(GL_TEXTURE_2D,pRInfo->textureCouleur);
-      glUniform1i(idTextureColor,2);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D,pRInfo.textureCouleur);
+      glUniform1i(idTextureColor,1);
       checkError("glUniform1ui()");
+
+      glActiveTexture(GL_TEXTURE3);
+      glBindTexture(GL_TEXTURE_2D,pRInfo.texturePosition);
+      glUniform1i(idTexturePosition,3);
+      checkError("glUniform1ui()");
+
+      
 
       // Affichage d'un gros cube
-      ICI FAUT SE MEFIER
+      //ICI FAUT SE MEFIER
       glDisable (GL_CULL_FACE);
-      glBegin(GL_TRIANGLES);
-   
-          glTexCoor2d(1.0,0.0);
-          glVertex3f (1.0,-1.0,0.0);
-          glTexCoor2d(1.0,1.0);
-          glVertex3f (1.0,1.0,0.0);
-          glTexCoor2d(0.0,1.0);
-          glVertex3f (-1.0,1.0,0.0);
-
-          glTexCoor2d(0.0,1.0);
-          glVertex3f (-1.0,1.0,0.0);
-          glTexCoor2d(0.0,0.0);
-          glVertex3f (-1.0,-1.0,0.0);
-          glTexCoor2d(1.0,0.0);
-          glVertex3f (1.0,-1.0,0.0);
-
-      glEnd(); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
+      glBegin(GL_QUADS);
+            glColor4f(1, 1, 1, 1);
+            glTexCoord2f(0.0f, 0.0f);
+            glVertex3f(-1.0f, -1.0f, 0.0f); // The bottom left corner
+            glTexCoord2f(0.0f, 1.0f);
+            glVertex3f(-1.0f, 1.0f, 0.0f); // The top left corner
+            glTexCoord2f(1.0f, 1.0f);
+            glVertex3f(1.0f, 1.0f, 0.0f); // The top right corner
+            glTexCoord2f(1.0f, 0.0f);
+            glVertex3f(1.0f, -1.0f, 0.0f); // The bottom right corner
+        glEnd(); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
     
       // On desactive la texture
 
-      glBindTexture(GL_TEXTURE_2D,0);
       glUseProgram(0);
       glEnable (GL_CULL_FACE);
 }
 
       // Ajout d'un affichage de debug, prouvant que le FBO fonctionne
-      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo->textureCouleur);
-      glBlitFramebuffer(0,0,pRInfo->width,pRInfo->height,
-                        0,0,pRInfo->width/3,pRInfo->height/3,
+      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.buffer);
+      glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+      glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
+                        0,0,pRInfo.width/3,pRInfo.height/3,
                         GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
 
+      //Le draw Buffer est par défault le fbo de l'écran et c'est pour ca que ca fonctionne je pense
+      glReadBuffer(GL_COLOR_ATTACHMENT1);
 
+
+       glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
+                        0,pRInfo.height/3,pRInfo.width/3,2*pRInfo.height/3,
+                        GL_COLOR_BUFFER_BIT,
+                        GL_LINEAR);
+
+       glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
+                        pRInfo.width/3,0,2*pRInfo.width/3,pRInfo.height/3,
+                        GL_DEPTH_BUFFER_BIT,
+                        GL_NEAREST);
+       glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+
+    
 }
 
 
-// gldrawbuffer (idem gl active texture)  espèce d'équivalent de glActiveTexture au moment de l'initialisation  debase seul le premier color attachment est actif donc il faut traité ce pb 
-//regarder GL_view_port quelle va ^etre la corelation entre u fragment et un pixel
-//il faut lui donner 0,0 height, width
-//voir comment se passe l'interpolation des variables varying
+  Render::Render(RenderingInfo const &  _pRInfo, Camera * const camera_, Mesh * const mesh_):
+pRInfo(_pRInfo)
+{
+  pRInfo.camera = camera_;
+  pRInfo.mesh = mesh_;
+}
+
+
+ Render::~Render()
+ {
+
+ }
+
+//voir comment se passe l'interpolation des variables varying --- flat smooth poid manuel
 // quelle diff entre définir une variable dans le main et à l'extérieur ?
-// voir comment je peux passer en argument des attribut non prévu par opengl
+//voir le cours openGL de Lille qui est pas mal
+// comment ca se passe en mémoire ?
+
+
+//to do list une fois que ca marche
+//gerer mon bug avec invalid opération glUniform
+//vérifier mon ggx
+//Regarder un peu le format de ma texture de depth et charger une autre texture qui enregistre la position pour vérifier
+
+
+//implémenter les lumières openGL
+//charger une scène plus complexe
+
+//s'interresser au niveau de Mip Map
+//creer une touche pour enregistrer l'image à l'écran (pratique)
+
+

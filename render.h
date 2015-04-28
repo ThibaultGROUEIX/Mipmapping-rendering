@@ -12,12 +12,18 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
-
+#include <cassert>
 #include "Vec3.h"
 #include "Camera.h"
 #include "Mesh.h"
 #include "GLProgram.h"
-#include "render.h"
+#include <cstring>
+#include <string>
+#include "Matrices.h"
+
+
+char checkError(const char* placeName);
+
 
 
 typedef struct RenderingInfo
@@ -28,7 +34,10 @@ typedef struct RenderingInfo
     GLuint textureCouleur;
     GLuint textureNormal;
     GLuint textureDepth;
+    GLuint texturePosition;
     GLuint buffer;
+    Mesh * mesh;
+    Camera * camera;
 
 
     const char * modelFileName;
@@ -41,9 +50,25 @@ typedef struct RenderingInfo
 
 }RenderingInfo;
 
-void init (RenderingInfo* pRInfo);
-char initTexture(GLuint* pTextureID, unsigned int width, unsigned int height);
-char initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GLuint * pTextureCouleur, unsigned int width, unsigned int height);
-void drawScene (RenderingInfo* pRInfo);
+
+class Render {
+public : 
+	//constructeur
+	Render( RenderingInfo const &  _pRInfo, Camera * const  camera, Mesh * const  mesh);
+	//destructeur
+	~Render();
+	char init ();
+	char initTextureColour(GLuint* pTextureID, unsigned int width, unsigned int height);
+	char initTextureDepth(GLuint* pTextureID, unsigned int width, unsigned int height);
+
+	char initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GLuint * pTextureCouleur,GLuint * pTexturePosition, unsigned int width, unsigned int height);
+	void drawScene ();
+
+public :
+	RenderingInfo pRInfo;
+
+};
+
+
 
 #endif
