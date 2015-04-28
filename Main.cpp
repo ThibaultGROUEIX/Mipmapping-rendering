@@ -67,9 +67,8 @@ void reshape(int w, int h) {
 }
 
 void display () {
-  //ce serait cool si je comprenais ce qu'il se passe dans mon display...
-  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //  Je comprends pas pourquoi ca clignote !
-  camera.apply (); 
+  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //  Je comprends pas pourquoi ca clignote ! Maintenant si !
+  camera.apply ();
   renderTime->drawScene ();
   glFlush ();
   glutSwapBuffers (); 
@@ -196,8 +195,6 @@ int main (int argc, char ** argv) {
   glutInitWindowSize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
   window = glutCreateWindow (appTitle.c_str ());
   std::cout << "init de glew renvoie : " << glewInit() << std::endl;
-
-
   renderTime->init ();
   std::cout << "Initialisation réussie" << std::endl;
   glutIdleFunc (idle);

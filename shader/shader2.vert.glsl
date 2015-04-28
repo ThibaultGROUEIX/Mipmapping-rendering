@@ -13,12 +13,12 @@
 // Du coup, ici on tranforme la variable texture gl_texCoord en une m^eme variable mais de type varying
 
 
-varying vec4 P;
+varying vec4 Pixel;
 
 
 void main(void) 
 {
-	P = gl_Vertex;
+	Pixel = gl_Vertex;
     gl_TexCoord[0] = gl_MultiTexCoord0;
     gl_Position = gl_Vertex;
 }

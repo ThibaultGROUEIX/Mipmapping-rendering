@@ -4,7 +4,7 @@
 //Récupération des textures de la première passe
 
 uniform sampler2D fboTexNormal;
-uniform sampler2D fboTexDepth;
+//uniform sampler2D fboTexDepth;
 uniform sampler2D fboTexColor;
 uniform sampler2D fboTexPosition;
 //recuperation des coordonnées de texture de chaque fragment du vertex shader
@@ -15,7 +15,7 @@ uniform float roughness_shader;
 
 uniform mat4 inverseTransposeProjectionMatrix;
 
-varying vec4 P;
+varying vec4 Pixel;
 
 
 //Pi (sans blague!)
@@ -24,21 +24,19 @@ const float Pi = 3.14159265359;
 
 void main (void)
 {	//récuperation des élements des textures
-	float depth = texture2D(fboTexDepth, gl_TexCoord[0]).x;
+	//float depth = texture2D(fboTexDepth, gl_TexCoord[0]).x;
 	vec4 normal = texture2D(fboTexNormal,gl_TexCoord[0]);
 	vec4 albedo = texture2D(fboTexColor,gl_TexCoord[0]);
-  vec4 pTheorique = texture2D(fboTexPosition,gl_TexCoord[0]);
+  vec4 positionTheorique = texture2D(fboTexPosition,gl_TexCoord[0]);
 
-	//définition des vecteurs pour GGX
-  vec4 p = inverseTransposeProjectionMatrix*vec4(P.xy, 2*depth -1, 1.0);
-  vec4 p2  = vec4(p.x/p.w, p.y/p.w, p.z/p.w, 1.);
-	//vec4 p = vec4(depth,depth,depth,1.);
-  //vec4 p = P; 
-  vec4 n = normal;
-  vec4 l = normalize (- p);
+  	// //définition des vecteurs pour GGX
+   //  vec4 positionFromDepth = inverseTransposeProjectionMatrix*vec4(Pixel.xy, 2*depth -1, 1.0);
+   //  vec4 p2  = vec4(positionFromDepth.x/positionFromDepth.w, positionFromDepth.y/positionFromDepth.w, positionFromDepth.z/positionFromDepth.w, 1.);
+   //  positionFromDepth = p2;
 
-
-  vec4 v = normalize (-p2);
+  vec4 n = gl_ModelViewMatrix*normal; //quelles normales sont stokées ? Dans quel repère ?
+  vec4 l = normalize (gl_ModelViewMatrix*lightPos - positionTheorique);
+  vec4 v = normalize (positionTheorique);
   vec4 h = normalize(l + v);
 
 
@@ -68,7 +66,7 @@ void main (void)
 
 	//Fin GGX
 
-	gl_FragColor = vec4(pTheorique.z,pTheorique.z,pTheorique.z,1.) ;
+	gl_FragColor = color; //vec4(pTheorique.z,pTheorique.z,pTheorique.z,1.) ;
   //quand je stocke dans la texture couleur, je suis surement clampé par le haut, il faut trouver un meilleur format pour stocker la position!
 
 }

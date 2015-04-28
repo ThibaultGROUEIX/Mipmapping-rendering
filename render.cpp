@@ -97,7 +97,7 @@ char Render::init () {
   pRInfo.secondPass->use ();
   pRInfo.secondPass->Program::setUniform1f("roughness_shader", 0.3);
   pRInfo.secondPass->Program::setUniform1f("coeffFresnel", 0.9);
-  pRInfo.secondPass->Program::setUniform4f("lightPos", 0.5,0.5,0.5,0.5);
+  pRInfo.secondPass->Program::setUniform4f("lightPos", 0.5,0.5,-0.5,1.0);
 
   } catch (Exception & e) {
     std::cout << e.msg () << std::endl;
@@ -263,9 +263,8 @@ void Render::drawScene () {
     GLint idInverseTransposeProjectionMatrix = glGetUniformLocation(pRInfo.secondPass->id(), "inverseTransposeProjectionMatrix");
     GLint idTextureNormal = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexNormal");
     GLint idTextureColor = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexColor");
-    GLint idTextureDepth = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexDepth");
+    //GLint idTextureDepth = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexDepth");
     GLint idTexturePosition = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexPosition");
-    
 
     if ( idTextureNormal == -1 )
       {        fprintf(stderr,"Error while getting the uniform 'fboTexNormal'\n");
@@ -274,14 +273,14 @@ void Render::drawScene () {
       {        fprintf(stderr,"Error while getting the uniform 'fboTexColor'\n");
 
       }
-      if(idTextureDepth == -1)
-    {
-        fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
-    }
+    //   if(idTextureDepth == -1)
+    // {
+    //     fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
+    // }
 
       if(idInverseTransposeProjectionMatrix == -1)
     {
-        fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
+        //fprintf(stderr,"Error while getting the uniform 'Matrix inverse projection'\n");
     }
 
         if(idTexturePosition == -1)
@@ -292,11 +291,13 @@ void Render::drawScene () {
 
       //Assigne la variable inverse transposée de la matrice de projection du fragment shader
       pRInfo.secondPass->Program::setUniformMatrix4fv(idInverseTransposeProjectionMatrix,inverseTransposeProjectionMatrix.get());
+
+
       //Indique la texture au shader
-      glActiveTexture(GL_TEXTURE2);
-      glBindTexture(GL_TEXTURE_2D,pRInfo.textureDepth);
-      glUniform1i(idTextureDepth,2);
-      checkError("glUniform1ui()");
+      // glActiveTexture(GL_TEXTURE2);
+      // glBindTexture(GL_TEXTURE_2D,pRInfo.textureDepth);
+      // glUniform1i(idTextureDepth,2);
+      // checkError("glUniform1ui()");
       
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D,pRInfo.textureNormal);
@@ -353,11 +354,11 @@ void Render::drawScene () {
                         0,pRInfo.height/3,pRInfo.width/3,2*pRInfo.height/3,
                         GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
-
+      glReadBuffer(GL_COLOR_ATTACHMENT2);
        glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
                         pRInfo.width/3,0,2*pRInfo.width/3,pRInfo.height/3,
-                        GL_DEPTH_BUFFER_BIT,
-                        GL_NEAREST);
+                          GL_COLOR_BUFFER_BIT,
+                        GL_LINEAR);
        glBindFramebuffer(GL_FRAMEBUFFER,0);
 
 
