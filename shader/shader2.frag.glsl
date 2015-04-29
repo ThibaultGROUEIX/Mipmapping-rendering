@@ -34,39 +34,44 @@ void main (void)
    //  vec4 p2  = vec4(positionFromDepth.x/positionFromDepth.w, positionFromDepth.y/positionFromDepth.w, positionFromDepth.z/positionFromDepth.w, 1.);
    //  positionFromDepth = p2;
 
-  vec4 n = gl_ModelViewMatrix*normal; //quelles normales sont stokées ? Dans quel repère ?
+  vec n =  normal; 
   vec4 l = normalize (gl_ModelViewMatrix*lightPos - positionTheorique);
   vec4 v = normalize (positionTheorique);
   vec4 h = normalize(l + v);
+
+  vec3 nR  = n;
+  vec3 lR  = vec3 ( l.x / l.w, l.y / l.w, l.z / l.w ); 
+  vec3 vR  = vec3 ( v.x / v.w, v.y / v.w, v.z / v.w ); 
+  vec3 hR  = vec3 ( h.x / h.w, h.y / h.w, h.z / h.w ); 
 
 
     //calcul de GGX Brdf (Il vaudrait mieux la vérifier à mon avis)
     vec4 fragColor = vec4(0.0,0.0,0.0,1.0);
 	   float alpha = roughness_shader * roughness_shader;
     vec4 fd = albedo / Pi;
-    float coef = 1.0 + (alpha - 1.0) * dot(n, h) * dot(n, h);
+    float coef = 1.0 + (alpha - 1.0) * dot(nR, hR) * dot(nR, hR);
     float D = alpha / (Pi * coef * coef);
     
     float F = coeffFresnel +
               (1.0 - coeffFresnel) *
-              pow(1.0 - max(0.0, dot(l, h)), 5.0);
+              pow(1.0 - max(0.0, dot(lR, hR)), 5.0);
     
-    float G1 = 2.0 * dot(n, l) / (dot(n, l) +
+    float G1 = 2.0 * dot(nR, lR) / (dot(nR, lR) +
                sqrt(alpha + (1.0 - alpha) *
-               dot(n, l) * dot(n, l)));
+               dot(nR, lR) * dot(nR, lR)));
 
-    float G2 = 2.0 * dot(n, v) /
-               (dot(n, v) + sqrt(alpha + (1.0 - alpha) * dot(n, v) * dot(n, v)));
+    float G2 = 2.0 * dot(nR, vR) /
+               (dot(nR, vR) + sqrt(alpha + (1.0 - alpha) * dot(nR, vR) * dot(nR, vR)));
 
-    float fs = D * F * G1 * G2 / (4.0 * dot (n, l) * dot(n, v));
+    float fs = albedo*D * F * G1 * G2 / (4.0 * dot (nR, lR) * dot(nR, vR));
     vec4 f = vec4(fs, fs, fs,1.0) + (1.0 - G1 * G2) * fd;
-    vec4 color = f*max(0.,dot(n,l));
+    vec4 color = f*max(0.,dot(nR,lR));
     // ----------------------------------------
     fragColor += color;
 
 	//Fin GGX
 
-	gl_FragColor = color; //vec4(pTheorique.z,pTheorique.z,pTheorique.z,1.) ;
+	gl_FragColor = color;
   //quand je stocke dans la texture couleur, je suis surement clampé par le haut, il faut trouver un meilleur format pour stocker la position!
 
 }
