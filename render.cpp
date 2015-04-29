@@ -285,7 +285,7 @@ void Render::drawScene () {
 
         if(idTexturePosition == -1)
     {
-        fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
+        fprintf(stderr,"Error while getting the uniform 'fboTexPosition'\n");
     }
 
 
