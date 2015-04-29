@@ -27,7 +27,7 @@ void main (void)
     // gl_FragColor = fragColor;
     gl_FragData[1] = matAlbedo; // Ici je stocke la couleur dans ma texture qui est bindée à gl_fragData[1]
     gl_FragData[0] = vec4(n,0.);
-    gl_FragData[2] = -P; //Ici je stocke la normale dans ma texture qui est bindée à gl_fragData[0]
-    //mettre une texture de plus
-}
+    gl_FragData[2] = -P; 
+
+  }
  

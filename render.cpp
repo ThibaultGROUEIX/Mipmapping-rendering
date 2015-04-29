@@ -97,7 +97,7 @@ char Render::init () {
   pRInfo.secondPass->use ();
   pRInfo.secondPass->Program::setUniform1f("roughness_shader", 0.3);
   pRInfo.secondPass->Program::setUniform1f("coeffFresnel", 0.9);
-  pRInfo.secondPass->Program::setUniform4f("lightPos", 0.5,0.5,-0.5,1.0);
+  pRInfo.secondPass->Program::setUniform4f("lightPos", 0.5,0.5,0.5  ,1.0);
 
   } catch (Exception & e) {
     std::cout << e.msg () << std::endl;
@@ -220,7 +220,7 @@ void Render::drawScene () {
   glDrawBuffers(3, drawbuffers);
   glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT );
   ////////////////////////////////// A ce stade il devrait y avoir du bleu dans mes normals.!
-  glViewport(0,0,pRInfo.width,pRInfo.height);
+  //glViewport(0,0,pRInfo.width,pRInfo.height);
 
   // if(rotateLight)
   // {  
@@ -260,37 +260,33 @@ void Render::drawScene () {
 
    // Recuperation de l'id de l'uniform
 
-    GLint idInverseTransposeProjectionMatrix = glGetUniformLocation(pRInfo.secondPass->id(), "inverseTransposeProjectionMatrix");
+    //GLint idInverseTransposeProjectionMatrix = glGetUniformLocation(pRInfo.secondPass->id(), "inverseTransposeProjectionMatrix");
     GLint idTextureNormal = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexNormal");
     GLint idTextureColor = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexColor");
     //GLint idTextureDepth = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexDepth");
     GLint idTexturePosition = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexPosition");
 
     if ( idTextureNormal == -1 )
-      {        fprintf(stderr,"Error while getting the uniform 'fboTexNormal'\n");
-     }
+    {        
+      fprintf(stderr,"Error while getting the uniform 'fboTexNormal'\n");
+    }
     if(idTextureColor == -1 )
-      {        fprintf(stderr,"Error while getting the uniform 'fboTexColor'\n");
+    {        
+      fprintf(stderr,"Error while getting the uniform 'fboTexColor'\n");
+    }
+    if(idTexturePosition == -1)
+    {
+      fprintf(stderr,"Error while getting the uniform 'fboTexPosition'\n");
+    }
 
-      }
-    //   if(idTextureDepth == -1)
+//   if(idTextureDepth == -1)
     // {
     //     fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
     // }
 
-      if(idInverseTransposeProjectionMatrix == -1)
-    {
-        //fprintf(stderr,"Error while getting the uniform 'Matrix inverse projection'\n");
-    }
-
-        if(idTexturePosition == -1)
-    {
-        fprintf(stderr,"Error while getting the uniform 'fboTexPosition'\n");
-    }
-
-
+   
       //Assigne la variable inverse transposée de la matrice de projection du fragment shader
-      pRInfo.secondPass->Program::setUniformMatrix4fv(idInverseTransposeProjectionMatrix,inverseTransposeProjectionMatrix.get());
+     // pRInfo.secondPass->Program::setUniformMatrix4fv(idInverseTransposeProjectionMatrix,inverseTransposeProjectionMatrix.get());
 
 
       //Indique la texture au shader
@@ -302,17 +298,17 @@ void Render::drawScene () {
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D,pRInfo.textureNormal);
       glUniform1i(idTextureNormal,0);
-      checkError("glUniform1ui()");
+      checkError("glUniform1i()");
 
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D,pRInfo.textureCouleur);
       glUniform1i(idTextureColor,1);
-      checkError("glUniform1ui()");
+      checkError("glUniform1i()");
 
-      glActiveTexture(GL_TEXTURE3);
+      glActiveTexture(GL_TEXTURE2);
       glBindTexture(GL_TEXTURE_2D,pRInfo.texturePosition);
-      glUniform1i(idTexturePosition,3);
-      checkError("glUniform1ui()");
+      glUniform1i(idTexturePosition,2 );
+      checkError("glUniform1i()");
 
       
 
