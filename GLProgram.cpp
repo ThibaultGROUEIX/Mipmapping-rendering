@@ -319,9 +319,7 @@
             vs->compile ();
             p->attach(vs);
             fs->loadFromFile (fragmentShaderFilename);
-            std::cout << "all good" << std::endl;
             fs->compile ();
-            std::cout << "all pas good" << std::endl;
             p->attach(fs);
             p->link();
             //p->use ();

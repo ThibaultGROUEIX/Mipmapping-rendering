@@ -30,7 +30,9 @@ public:
 
 //méthodes
 	//test si niveau est plus grand que niveau MipMap et update
+	void SetLevel(const int& level);
 	void raffiner(int niveau); //ajouter un niveau de MipMap
+	void use(int niveau);
 
 //méthode static
 	//pour générer un nouvelle texture

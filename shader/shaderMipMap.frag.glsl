@@ -29,7 +29,7 @@ void main (void)
 
 
   //On renvoie
-  gl_FragData[0] = vec4(0.,1.,0.,1.)*fragColorAttachment0;//fragColorAttachment0;
+  gl_FragData[0] = fragColorAttachment0;//fragColorAttachment0;
   // gl_FragData[1] = newFrag1;
   // gl_FragData[2] = newFrag2;
   // gl_FragData[3] = newFrag3;

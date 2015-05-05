@@ -37,6 +37,8 @@ typedef struct RenderingInfo
     GLuint texturePosition;
 
     MipMap * mipColor;
+    MipMap * mipNormal;
+    MipMap * mipPosition;
 
     GLuint buffer;
     Mesh * mesh;
@@ -66,6 +68,7 @@ public :
 
 	char initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GLuint * pTextureCouleur,GLuint * pTexturePosition, unsigned int width, unsigned int height);
 	void drawScene ();
+	void display();
 
 public :
 	RenderingInfo pRInfo;

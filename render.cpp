@@ -70,6 +70,9 @@ char Render::init () {
     //init la deuxieme texture
     error |= initFBO(&(pRInfo.buffer),&pRInfo.textureDepth, &pRInfo.textureNormal, &pRInfo.textureCouleur, &pRInfo.texturePosition, pRInfo.width, pRInfo.height);
     pRInfo.mipColor = new MipMap(pRInfo.textureCouleur, pRInfo.width, pRInfo.height);
+    pRInfo.mipNormal = new MipMap(pRInfo.textureNormal, pRInfo.width, pRInfo.height);
+    pRInfo.mipPosition = new MipMap(pRInfo.texturePosition, pRInfo.width, pRInfo.height);
+
 
   //initialisation random
 
@@ -243,8 +246,12 @@ void Render::drawScene () {
 }
 //second Pass
 {    // On passe sur l'ecran
-    pRInfo.mipColor->raffiner(1);
+    pRInfo.mipColor->raffiner(2);
+    pRInfo.mipNormal->raffiner(6);
+    pRInfo.mipPosition->raffiner(1);
+
     pRInfo.secondPass->use();
+    glViewport(0,0,pRInfo.width,pRInfo.height);
 
 
     GLfloat model[16]; 
@@ -333,7 +340,11 @@ void Render::drawScene () {
 
       glUseProgram(0);
       glEnable (GL_CULL_FACE);
+      display();
+  }
 }
+
+void Render::display(){
 
       // Ajout d'un affichage de debug, prouvant que le FBO fonctionne
       glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.buffer);
@@ -361,13 +372,29 @@ void Render::drawScene () {
       glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipColor->handleFBOEnd);
       glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-      glBlitFramebuffer(0,0,pRInfo.width/2,pRInfo.height/2,
-                        2*pRInfo.width/3,0,2.5*pRInfo.width/3,pRInfo.height/3,
+      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,2),pRInfo.mipColor->height/pow(2,2),
+                        2*pRInfo.width/3,0,2.5*pRInfo.width/3,0.5*pRInfo.height/3,
+                        GL_COLOR_BUFFER_BIT,
+                        GL_LINEAR);
+      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipNormal->handleFBOEnd);
+      glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,6),pRInfo.mipColor->height/pow(2,6),
+                        2.5*pRInfo.width/3,0,pRInfo.width,0.5*pRInfo.height/3,
+                        GL_COLOR_BUFFER_BIT,
+                        GL_LINEAR);
+      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipPosition->handleFBOEnd);
+      glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+      glBlitFramebuffer(0,0,pRInfo.mipColor->width/2,pRInfo.mipColor->height/2,
+                        2.5*pRInfo.width/3,0.5*pRInfo.height/3,pRInfo.width,pRInfo.height/3,
                         GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
 
        glBindFramebuffer(GL_FRAMEBUFFER,0);
-
+       pRInfo.mipColor->SetLevel(0);
+       pRInfo.mipPosition->SetLevel(0);
+       pRInfo.mipNormal->SetLevel(0);
     
 }
 
