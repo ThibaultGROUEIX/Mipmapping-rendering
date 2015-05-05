@@ -2,9 +2,19 @@
 #define MIPMAP_H
 
 
-#include "render.h"
+#include <cstring>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstdio>
+#include <cstdlib>
+#include <algorithm>
+#include <cmath>
+#include <cassert>
 #include "GLProgram.h"
 #include <vector>;
+#include <iostream>
 
 class MipMap 
 {
@@ -13,24 +23,31 @@ class MipMap
 public:
 
 	//constructeur
-	MipMap(const & int profondeur, GLuint FBO_Location, int numberAttachments);  //Le paramètre profondeur définit le nombre de Texture fille à créer
+	//création des deux FBO, assignation des attribus
+	MipMap(GLuint handleTexture, int width, int height);  //Le paramètre profondeur définit le nombre de Texture fille à créer
 	//destructeur
 	~MipMap();
 
 //méthodes
-	void raffiner(); //ajouter un niveau de MipMap
+	//test si niveau est plus grand que niveau MipMap et update
+	void raffiner(int niveau); //ajouter un niveau de MipMap
 
 //méthode static
+	//pour générer un nouvelle texture
 	static char initTextureColor(GLuint* pTextureID, unsigned int width, unsigned int height);
 
 
-protected:
-	vector<GLint> locations;
+
+public:
+	GLuint handleFBOStart;
+	GLuint handleFBOEnd;
+	std::vector<GLuint> handleTextures;
 
 	unsigned int width;
 	unsigned int height;
+	unsigned int niveauMipMap;
 
-	static Program * pass;
+	Program * pass;
 };
 
 

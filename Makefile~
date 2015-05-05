@@ -1,5 +1,5 @@
 CIBLE = main
-SRCS =  Main.cpp Camera.cpp Mesh.cpp GLProgram.cpp render.cpp Matrices.cpp MipMap.cpp
+SRCS =  Main.cpp Camera.cpp Mesh.cpp GLProgram.cpp render.cpp Matrices.cpp
 OPENGL_PATH = /usr/lib/nvidia-331/ # change this for your own environment
 LIBS = -L$(OPENGL_PATH) -lglut -lGLU -lGL -lGLEW -lm -pthread
 #INCLUDE = ~/Documents/stage de recherche Telecom/TP_Shaders/glm

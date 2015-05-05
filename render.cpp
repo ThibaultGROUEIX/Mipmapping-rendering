@@ -65,10 +65,11 @@ char Render::init () {
     error |= initTextureColour(&pRInfo.textureNormal,pRInfo.width,pRInfo.height);
     error |= initTextureColour(&pRInfo.texturePosition,pRInfo.width,pRInfo.height);
 
+
     error |= initTextureDepth(&pRInfo.textureDepth,pRInfo.width,pRInfo.height);
     //init la deuxieme texture
     error |= initFBO(&(pRInfo.buffer),&pRInfo.textureDepth, &pRInfo.textureNormal, &pRInfo.textureCouleur, &pRInfo.texturePosition, pRInfo.width, pRInfo.height);
-
+    pRInfo.mipColor = new MipMap(pRInfo.textureCouleur, pRInfo.width, pRInfo.height);
 
   //initialisation random
 
@@ -90,14 +91,14 @@ char Render::init () {
   //initialisation du Premier Programme
   pRInfo.firstPass = Program::genVFProgram ("Simple fist pass Program", "shader1.vert.glsl", "shader1.frag.glsl"); // Load and compile pair of shaders
   pRInfo.firstPass->use (); // Activate the shader program
-  pRInfo.firstPass->Program::setUniform4f("matAlbedo",1.,1.,1.,1.);
+  pRInfo.firstPass->Program::setUniform4f("matAlbedo",0.4,0.4,0.4,1.);
   glUseProgram(0);
   //initialisation  du Second Programme
   pRInfo.secondPass = Program::genVFProgram ("Simple second pass Program", "shader2.vert.glsl", "shader2.frag.glsl"); // Load and compile pair of shaders
   pRInfo.secondPass->use ();
   pRInfo.secondPass->Program::setUniform1f("roughness_shader", 0.3);
   pRInfo.secondPass->Program::setUniform1f("coeffFresnel", 0.9);
-  pRInfo.secondPass->Program::setUniform4f("lightPos", 0.5,0.5,0.5  ,1.0);
+  pRInfo.secondPass->Program::setUniform4f("lightPos", 0., 0., -2., 1.0);
 
   } catch (Exception & e) {
     std::cout << e.msg () << std::endl;
@@ -128,8 +129,8 @@ char Render::initTextureColour(GLuint* pTextureID, unsigned int width, unsigned 
     error |= checkError("glTexParameterf");
     // On alloue un espace pour les futures donnees
     // ici on définit le format de la texture, ici ca va pas puisque moi je veux récupérer les normales et la depth donc la couleur m'interresse pas...
-    std::cout << width << " width " << height << " height " << std::endl;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    //std::cout << width << " width " << height << " height " << std::endl;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     error |= checkError("glTexImage2D");
 
     //on debind la texture (machine à état)
@@ -242,7 +243,7 @@ void Render::drawScene () {
 }
 //second Pass
 {    // On passe sur l'ecran
-
+    pRInfo.mipColor->raffiner(1);
     pRInfo.secondPass->use();
 
 
@@ -278,6 +279,7 @@ void Render::drawScene () {
     {
       fprintf(stderr,"Error while getting the uniform 'fboTexPosition'\n");
     }
+
 
 //   if(idTextureDepth == -1)
     // {
@@ -355,8 +357,16 @@ void Render::drawScene () {
                         pRInfo.width/3,0,2*pRInfo.width/3,pRInfo.height/3,
                           GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
-       glBindFramebuffer(GL_FRAMEBUFFER,0);
 
+      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipColor->handleFBOEnd);
+      glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+      glBlitFramebuffer(0,0,pRInfo.width/2,pRInfo.height/2,
+                        2*pRInfo.width/3,0,2.5*pRInfo.width/3,pRInfo.height/3,
+                        GL_COLOR_BUFFER_BIT,
+                        GL_LINEAR);
+
+       glBindFramebuffer(GL_FRAMEBUFFER,0);
 
     
 }
@@ -379,13 +389,6 @@ pRInfo(_pRInfo)
 // quelle diff entre définir une variable dans le main et à l'extérieur ?
 //voir le cours openGL de Lille qui est pas mal
 // comment ca se passe en mémoire ?
-
-
-//to do list une fois que ca marche
-//gerer mon bug avec invalid opération glUniform
-//vérifier mon ggx
-//Regarder un peu le format de ma texture de depth et charger une autre texture qui enregistre la position pour vérifier
-
 
 //implémenter les lumières openGL
 //charger une scène plus complexe

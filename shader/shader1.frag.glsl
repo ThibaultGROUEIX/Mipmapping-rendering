@@ -26,8 +26,8 @@ void main (void)
     // ---------- Code to change -------------
     // gl_FragColor = fragColor;
     gl_FragData[1] = matAlbedo; // Ici je stocke la couleur dans ma texture qui est bindée à gl_fragData[1]
-    gl_FragData[0] = vec4(n,0.);
-    gl_FragData[2] = -P; 
+    gl_FragData[0] = vec4(n,0.);//0.5*(vec4(n,0.)+vec4(1.0, 1.0, 1.0, 0.0)); //vec4(max(n.x,-n.x),max(n.y,-n.y),max(n.z,-n.z),0.0); //Ici je stocke la normal dans le repère de l'oeil
+    gl_FragData[2] = P;  //Ici je stocke laposition de l'objet dans le repère de l'oeil
 
   }
  

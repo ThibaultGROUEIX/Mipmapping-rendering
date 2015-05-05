@@ -20,7 +20,7 @@
 #include <cstring>
 #include <string>
 #include "Matrices.h"
-
+#include "MipMap.h"
 
 char checkError(const char* placeName);
 
@@ -35,6 +35,9 @@ typedef struct RenderingInfo
     GLuint textureNormal;
     GLuint textureDepth;
     GLuint texturePosition;
+
+    MipMap * mipColor;
+
     GLuint buffer;
     Mesh * mesh;
     Camera * camera;
