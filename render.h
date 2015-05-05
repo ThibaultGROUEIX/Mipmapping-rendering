@@ -44,6 +44,10 @@ typedef struct RenderingInfo
     Mesh * mesh;
     Camera * camera;
 
+    int levelColor;
+    int levelNormal;
+    int levelPosition;
+
 
     const char * modelFileName;
 	// Information sur la fenetre
@@ -70,7 +74,7 @@ public :
 	void drawScene ();
 	void displayScreen();
 	void GenerateGBuffer();
-	void ComputeBRDF(const int& levelColor, const int& levelPosition, const int& levelAlbedo);
+	void ComputeBRDF(const int& _levelColor, const int& _levelPosition, const int& _levelNormal);
 
 public :
 	RenderingInfo pRInfo;

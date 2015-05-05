@@ -234,7 +234,7 @@ void Render::GenerateGBuffer()
   glUseProgram(0);
 }
 
-void Render::ComputeBRDF(const int& levelColor, const int& levelPosition, const int& levelAlbedo)
+void Render::ComputeBRDF(const int& _levelColor, const int& _levelPosition, const int& _levelNormal)
 {
   pRInfo.secondPass->use();
   glViewport(0,0,pRInfo.width,pRInfo.height);
@@ -281,17 +281,17 @@ void Render::ComputeBRDF(const int& levelColor, const int& levelPosition, const 
     // checkError("glUniform1ui()");
     
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D,pRInfo.textureNormal);
+    glBindTexture(GL_TEXTURE_2D,pRInfo.mipNormal->handleTextures[_levelNormal]);
     glUniform1i(idTextureNormal,0);
     checkError("glUniform1i()");
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D,pRInfo.textureCouleur);
+    glBindTexture(GL_TEXTURE_2D,pRInfo.mipColor->handleTextures[_levelColor]);
     glUniform1i(idTextureColor,1);
     checkError("glUniform1i()");
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D,pRInfo.texturePosition);
+    glBindTexture(GL_TEXTURE_2D,pRInfo.mipPosition->handleTextures[0]);
     glUniform1i(idTexturePosition,2 );
     checkError("glUniform1i()");
 
@@ -318,11 +318,10 @@ void Render::drawScene ()
 {
   GenerateGBuffer();
   pRInfo.mipColor->raffiner(2);
-  pRInfo.mipNormal->raffiner(6);
-  pRInfo.mipPosition->raffiner(1);
-  ComputeBRDF(1,1,1);
+  pRInfo.mipNormal->raffiner(2);
+  pRInfo.mipPosition->raffiner(2);
+  ComputeBRDF(2,2,2);
   displayScreen();
-  
 }
 
 void Render::displayScreen(){
@@ -360,14 +359,14 @@ void Render::displayScreen(){
       glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipNormal->handleFBOEnd);
       glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,6),pRInfo.mipColor->height/pow(2,6),
+      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,2),pRInfo.mipColor->height/pow(2,2),
                         2.5*pRInfo.width/3,0,pRInfo.width,0.5*pRInfo.height/3,
                         GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
       glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipPosition->handleFBOEnd);
       glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-      glBlitFramebuffer(0,0,pRInfo.mipColor->width/2,pRInfo.mipColor->height/2,
+      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,2),pRInfo.mipColor->height/pow(2,2),
                         2.5*pRInfo.width/3,0.5*pRInfo.height/3,pRInfo.width,pRInfo.height/3,
                         GL_COLOR_BUFFER_BIT,
                         GL_LINEAR);
@@ -385,6 +384,13 @@ pRInfo(_pRInfo)
 {
   pRInfo.camera = camera_;
   pRInfo.mesh = mesh_;
+  pRInfo.levelPosition = 0;
+  pRInfo.levelNormal = 0;
+  pRInfo.levelColor = 0;
+  std::cout << "Level of mipmap in texture Color used for rendering : " << pRInfo.levelColor << std::endl;
+  std::cout << "Level of mipmap in texture Normal used for rendering : " << pRInfo.levelNormal << std::endl;
+  std::cout << "Level of mipmap in texture Position used for rendering : " << pRInfo.levelPosition << std::endl;
+
 }
 
 
