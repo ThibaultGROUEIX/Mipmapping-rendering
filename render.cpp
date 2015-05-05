@@ -210,141 +210,122 @@ char Render::initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GL
 }
 
 
-
-void Render::drawScene () {
-//First Pass
-
-  {
-  // Active le rendering dans le FBO (donc, dans une texture)
+void Render::GenerateGBuffer()
+{
+    // Active le rendering dans le FBO (donc, dans une texture)
   pRInfo.firstPass->use();
-    glClearColor(0.0f,0.0f,0.0f,1.0f);
+  glClearColor(0.0f,0.0f,0.0f,1.0f);
 
   glBindFramebuffer(GL_FRAMEBUFFER,pRInfo.buffer);
   GLenum drawbuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2 };
   glDrawBuffers(3, drawbuffers);
   glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT );
-  ////////////////////////////////// A ce stade il devrait y avoir du bleu dans mes normals.!
-  //glViewport(0,0,pRInfo.width,pRInfo.height);
+  //////////////////////////////////
 
-  // if(rotateLight)
-  // {  
-  //   rotateLightAngle+=0.05;
-  //   pRInfo.firstPass->Program::setUniform3f("lightPos", cos(rotateLightAngle),0.5,sin(rotateLightAngle));
-  // }
   glBegin (GL_TRIANGLES);
   for (unsigned int i = 0; i < pRInfo.mesh->T.size (); i++) 
-    for (unsigned int j = 0; j < 3; j++) {
+    for (unsigned int j = 0; j < 3; j++)
+    {
       const Vertex & v = pRInfo.mesh->V[pRInfo.mesh->T[i].v[j]];
-      //glattrib manuel
-      //glTexCoor...
-      //glColor3f()
       glNormal3f (v.n[0], v.n[1], v.n[2]); // Specifies current normal vertex   
       glVertex3f (v.p[0], v.p[1], v.p[2]); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
     }
   glEnd ();
   glUseProgram(0);
 }
-//second Pass
-{    // On passe sur l'ecran
-    pRInfo.mipColor->raffiner(2);
-    pRInfo.mipNormal->raffiner(6);
-    pRInfo.mipPosition->raffiner(1);
 
-    pRInfo.secondPass->use();
-    glViewport(0,0,pRInfo.width,pRInfo.height);
+void Render::ComputeBRDF(const int& levelColor, const int& levelPosition, const int& levelAlbedo)
+{
+  pRInfo.secondPass->use();
+  glViewport(0,0,pRInfo.width,pRInfo.height);
 
+  GLfloat model[16]; 
+  glGetFloatv(GL_PROJECTION_MATRIX, model);
+  inverseTransposeProjectionMatrix = Matrix4(model);
+  inverseTransposeProjectionMatrix.invert();
+  //inverseTransposeProjectionMatrix.transpose();
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
+  glClearColor(1.f,0.f,0.0f,1.0f);
+  glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT );
 
-    GLfloat model[16]; 
-    glGetFloatv(GL_PROJECTION_MATRIX, model);
-    inverseTransposeProjectionMatrix = Matrix4(model);
-    inverseTransposeProjectionMatrix.invert();
-    //inverseTransposeProjectionMatrix.transpose();
+  // Recuperation de l'id de l'uniform
+  //GLint idInverseTransposeProjectionMatrix = glGetUniformLocation(pRInfo.secondPass->id(), "inverseTransposeProjectionMatrix");
+  GLint idTextureNormal = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexNormal");
+  GLint idTextureColor = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexColor");
+  //GLint idTextureDepth = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexDepth");
+  GLint idTexturePosition = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexPosition");
 
-
-
-    glBindFramebuffer(GL_FRAMEBUFFER,0);
-    glClearColor(1.f,0.f,0.0f,1.0f);
-    glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT );
-
-   // Recuperation de l'id de l'uniform
-
-    //GLint idInverseTransposeProjectionMatrix = glGetUniformLocation(pRInfo.secondPass->id(), "inverseTransposeProjectionMatrix");
-    GLint idTextureNormal = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexNormal");
-    GLint idTextureColor = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexColor");
-    //GLint idTextureDepth = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexDepth");
-    GLint idTexturePosition = glGetUniformLocation(pRInfo.secondPass->id(),"fboTexPosition");
-
-    if ( idTextureNormal == -1 )
-    {        
-      fprintf(stderr,"Error while getting the uniform 'fboTexNormal'\n");
-    }
-    if(idTextureColor == -1 )
-    {        
-      fprintf(stderr,"Error while getting the uniform 'fboTexColor'\n");
-    }
-    if(idTexturePosition == -1)
-    {
-      fprintf(stderr,"Error while getting the uniform 'fboTexPosition'\n");
-    }
-
-
-//   if(idTextureDepth == -1)
-    // {
-    //     fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
-    // }
-
-   
-      //Assigne la variable inverse transposée de la matrice de projection du fragment shader
-     // pRInfo.secondPass->Program::setUniformMatrix4fv(idInverseTransposeProjectionMatrix,inverseTransposeProjectionMatrix.get());
-
-
-      //Indique la texture au shader
-      // glActiveTexture(GL_TEXTURE2);
-      // glBindTexture(GL_TEXTURE_2D,pRInfo.textureDepth);
-      // glUniform1i(idTextureDepth,2);
-      // checkError("glUniform1ui()");
-      
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D,pRInfo.textureNormal);
-      glUniform1i(idTextureNormal,0);
-      checkError("glUniform1i()");
-
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D,pRInfo.textureCouleur);
-      glUniform1i(idTextureColor,1);
-      checkError("glUniform1i()");
-
-      glActiveTexture(GL_TEXTURE2);
-      glBindTexture(GL_TEXTURE_2D,pRInfo.texturePosition);
-      glUniform1i(idTexturePosition,2 );
-      checkError("glUniform1i()");
-
-      
-
-      // Affichage d'un gros cube
-      //ICI FAUT SE MEFIER
-      glDisable (GL_CULL_FACE);
-      glBegin(GL_QUADS);
-            glColor4f(1, 1, 1, 1);
-            glTexCoord2f(0.0f, 0.0f);
-            glVertex3f(-1.0f, -1.0f, 0.0f); // The bottom left corner
-            glTexCoord2f(0.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, 0.0f); // The top left corner
-            glTexCoord2f(1.0f, 1.0f);
-            glVertex3f(1.0f, 1.0f, 0.0f); // The top right corner
-            glTexCoord2f(1.0f, 0.0f);
-            glVertex3f(1.0f, -1.0f, 0.0f); // The bottom right corner
-        glEnd(); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
-    
-      // On desactive la texture
-
-      glUseProgram(0);
-      glEnable (GL_CULL_FACE);
-      display();
+  if ( idTextureNormal == -1 )
+  {        
+    fprintf(stderr,"Error while getting the uniform 'fboTexNormal'\n");
   }
+  if(idTextureColor == -1 )
+  {        
+    fprintf(stderr,"Error while getting the uniform 'fboTexColor'\n");
+  }
+  if(idTexturePosition == -1)
+  {
+    fprintf(stderr,"Error while getting the uniform 'fboTexPosition'\n");
+  }
+//   if(idTextureDepth == -1)
+  // {
+  //     fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
+  // }
+    //Assigne la variable inverse transposée de la matrice de projection du fragment shader
+   // pRInfo.secondPass->Program::setUniformMatrix4fv(idInverseTransposeProjectionMatrix,inverseTransposeProjectionMatrix.get());
+
+    //Indique la texture au shader
+    // glActiveTexture(GL_TEXTURE2);
+    // glBindTexture(GL_TEXTURE_2D,pRInfo.textureDepth);
+    // glUniform1i(idTextureDepth,2);
+    // checkError("glUniform1ui()");
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,pRInfo.textureNormal);
+    glUniform1i(idTextureNormal,0);
+    checkError("glUniform1i()");
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D,pRInfo.textureCouleur);
+    glUniform1i(idTextureColor,1);
+    checkError("glUniform1i()");
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D,pRInfo.texturePosition);
+    glUniform1i(idTexturePosition,2 );
+    checkError("glUniform1i()");
+
+    // Affichage d'un gros cube
+    glDisable (GL_CULL_FACE);
+    glBegin(GL_QUADS);
+          glColor4f(1, 1, 1, 1);
+          glTexCoord2f(0.0f, 0.0f);
+          glVertex3f(-1.0f, -1.0f, 0.0f); // The bottom left corner
+          glTexCoord2f(0.0f, 1.0f);
+          glVertex3f(-1.0f, 1.0f, 0.0f); // The top left corner
+          glTexCoord2f(1.0f, 1.0f);
+          glVertex3f(1.0f, 1.0f, 0.0f); // The top right corner
+          glTexCoord2f(1.0f, 0.0f);
+          glVertex3f(1.0f, -1.0f, 0.0f); // The bottom right corner
+      glEnd(); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
+  
+    // On desactive la texture
+    glUseProgram(0);
+    glEnable (GL_CULL_FACE);
 }
 
-void Render::display(){
+void Render::drawScene ()
+{
+  GenerateGBuffer();
+  pRInfo.mipColor->raffiner(2);
+  pRInfo.mipNormal->raffiner(6);
+  pRInfo.mipPosition->raffiner(1);
+  ComputeBRDF(1,1,1);
+  displayScreen();
+  
+}
+
+void Render::displayScreen(){
 
       // Ajout d'un affichage de debug, prouvant que le FBO fonctionne
       glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.buffer);

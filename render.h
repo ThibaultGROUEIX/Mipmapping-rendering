@@ -68,7 +68,9 @@ public :
 
 	char initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GLuint * pTextureCouleur,GLuint * pTexturePosition, unsigned int width, unsigned int height);
 	void drawScene ();
-	void display();
+	void displayScreen();
+	void GenerateGBuffer();
+	void ComputeBRDF(const int& levelColor, const int& levelPosition, const int& levelAlbedo);
 
 public :
 	RenderingInfo pRInfo;
