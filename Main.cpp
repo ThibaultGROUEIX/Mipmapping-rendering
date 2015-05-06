@@ -74,13 +74,17 @@ void display () {
   glutSwapBuffers (); 
 }
 
-void key (unsigned char keyPressed, int x, int y) {
-  switch (keyPressed) {
-  case 'f':
-    if (fullScreen) {
+void key (unsigned char keyPressed, int x, int y)
+{
+  switch (keyPressed)
+  {
+    case 'f':
+    if (fullScreen)
+    {
       glutReshapeWindow (camera.getScreenWidth (), camera.getScreenHeight ());
       fullScreen = false;
-    } else {
+    } 
+    else {
       glutFullScreen ();
       fullScreen = true;
     }      
@@ -90,14 +94,14 @@ void key (unsigned char keyPressed, int x, int y) {
       exit (0);
       break;
   case '+' :
-     {
+  {
     GLfloat panams;
     renderTime->pRInfo.secondPass->Program::getUniform("roughness_shader", &panams);
     panams  = -max(-1.0, -panams-0.05);
     renderTime->pRInfo.secondPass->Program::setUniform1f("roughness_shader", panams);
     std::cout << "roughness : " <<  panams <<std::endl;
-     break;
-    }
+    break;
+  }
 
   case '-' : 
   {
@@ -107,10 +111,10 @@ void key (unsigned char keyPressed, int x, int y) {
     std::cout << panams;
     renderTime->pRInfo.secondPass->Program::setUniform1f("roughness_shader", panams);
     std::cout << "roughness : " <<  panams <<std::endl;
-
     break;
   }
-    case 'a' : 
+  
+  case 'a' : 
   {
     GLfloat panams;
     renderTime->pRInfo.secondPass->Program::getUniform("coeffFresnel", &panams);
@@ -118,32 +122,77 @@ void key (unsigned char keyPressed, int x, int y) {
     std::cout << panams;
     renderTime->pRInfo.secondPass->Program::setUniform1f("coeffFresnel", panams);
     std::cout << "coeffFresnel : " <<  panams <<std::endl;
-
     break;
   }
+
   case 'z' :
-    {
+  {
     GLfloat panams;
     renderTime->pRInfo.secondPass->Program::getUniform("coeffFresnel", &panams);
     panams  = -max(-1.0, -panams-0.05);
     renderTime->pRInfo.secondPass->Program::setUniform1f("coeffFresnel", panams);
     std::cout << "coeffFresnel : " <<  panams <<std::endl;
     break;
-    }
-     case 'r' : 
-     {
+  }
+  
+  case 'r' : 
+  {
     rotateLight = true;
     break;
   }
+  
   case 'w':
+  {
     GLint mode[2];
     glGetIntegerv (GL_POLYGON_MODE, mode);
     glPolygonMode (GL_FRONT_AND_BACK, mode[1] ==  GL_FILL ? GL_LINE : GL_FILL);
     break;
+  }
+
+  case 'm' : 
+  {
+    std::cout << "Voulez vous modifier les paramètres de MipMap(y/n)?" << std::endl;
+    string reponse;
+    std::cin>>reponse;
+    if(reponse=="n")
+    {
+      std::cout << "Level of mipmap in texture Color used for rendering : " << renderTime->pRInfo.levelColor << std::endl;
+      std::cout << "Level of mipmap in texture Normal used for rendering : " << renderTime->pRInfo.levelNormal << std::endl;
+      std::cout << "Level of mipmap in texture Position used for rendering : " << renderTime->pRInfo.levelPosition << std::endl;
+
+    }
+    else
+    {
+        string mot;
+        std::cout<<"Quelle paramètre ? position/color/normal" << std::endl;
+        std::cin >> mot;
+        int taille;
+        std::cout<<"Quelle niveau de MipMap ? Rappel : width = " << renderTime->pRInfo.width << " height = " << renderTime->pRInfo.height << std::endl;
+        std::cin >> taille;
+        if(mot == "color" || mot == "c")
+        {
+          renderTime->pRInfo.levelColor = taille;
+          std::cout << "done" << std::endl;
+        }
+        else if(mot == "position" || mot == "p")
+        {
+          renderTime->pRInfo.levelPosition = taille;
+          std::cout << "done" << std::endl;
+        }
+        else if(mot == "normal" || mot == "n")
+        {
+          renderTime->pRInfo.levelNormal = taille;
+          std::cout << "done" << std::endl;
+        }
+    }
     break;
+  }
+  break;
   default:
-    printUsage ();
+  {
+    //printUsage ();
     break;
+  }
   }
 
 

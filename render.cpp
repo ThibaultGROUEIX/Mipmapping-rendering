@@ -49,7 +49,8 @@ char checkError(const char* placeName)
 }
 
 
-char Render::init () {
+char Render::init ()
+{
 
 
 
@@ -267,7 +268,7 @@ void Render::ComputeBRDF(const int& _levelColor, const int& _levelPosition, cons
   {
     fprintf(stderr,"Error while getting the uniform 'fboTexPosition'\n");
   }
-//   if(idTextureDepth == -1)
+  //   if(idTextureDepth == -1)
   // {
   //     fprintf(stderr,"Error while getting the uniform 'fboTexDepth'\n");
   // }
@@ -291,7 +292,7 @@ void Render::ComputeBRDF(const int& _levelColor, const int& _levelPosition, cons
     checkError("glUniform1i()");
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D,pRInfo.mipPosition->handleTextures[0]);
+    glBindTexture(GL_TEXTURE_2D,pRInfo.mipPosition->handleTextures[_levelPosition]);
     glUniform1i(idTexturePosition,2 );
     checkError("glUniform1i()");
 
@@ -317,65 +318,66 @@ void Render::ComputeBRDF(const int& _levelColor, const int& _levelPosition, cons
 void Render::drawScene ()
 {
   GenerateGBuffer();
-  pRInfo.mipColor->raffiner(2);
-  pRInfo.mipNormal->raffiner(2);
-  pRInfo.mipPosition->raffiner(2);
-  ComputeBRDF(2,2,2);
-  displayScreen();
+  pRInfo.mipColor->raffiner(pRInfo.levelColor);
+  pRInfo.mipNormal->raffiner(pRInfo.levelNormal);
+  pRInfo.mipPosition->raffiner(pRInfo.levelPosition);
+  ComputeBRDF(pRInfo.levelColor,pRInfo.levelPosition,pRInfo.levelNormal);
+  displayScreen(pRInfo.levelColor,pRInfo.levelPosition,pRInfo.levelNormal);
 }
 
-void Render::displayScreen(){
+  void Render::displayScreen(const int& levelC, const int& levelP, const int& levelN)
+{
 
-      // Ajout d'un affichage de debug, prouvant que le FBO fonctionne
-      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.buffer);
-      glReadBuffer(GL_COLOR_ATTACHMENT0);
+  // Ajout d'un affichage de debug, prouvant que le FBO fonctionne
+  // glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.buffer);
+  // glReadBuffer(GL_COLOR_ATTACHMENT0);
+  // glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
+  //                 0,0,pRInfo.width/3,pRInfo.height/3,
+  //                 GL_COLOR_BUFFER_BIT,
+  //                 GL_LINEAR);
 
-      glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
-                        0,0,pRInfo.width/3,pRInfo.height/3,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
+  // //Le draw Buffer est par défault le fbo de l'écran et c'est pour ca que ca fonctionne je pense
+  // glReadBuffer(GL_COLOR_ATTACHMENT1);
+  // glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
+  //                 0,pRInfo.height/3,pRInfo.width/3,2*pRInfo.height/3,
+  //                 GL_COLOR_BUFFER_BIT,
+  //                 GL_LINEAR);
 
-      //Le draw Buffer est par défault le fbo de l'écran et c'est pour ca que ca fonctionne je pense
-      glReadBuffer(GL_COLOR_ATTACHMENT1);
+  // glReadBuffer(GL_COLOR_ATTACHMENT2);
+  // glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
+  //                 pRInfo.width/3,0,2*pRInfo.width/3,pRInfo.height/3,
+  //                 GL_COLOR_BUFFER_BIT,
+  //                 GL_LINEAR);
 
+  pRInfo.mipColor ->use(levelC);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipColor->handleFBOEnd);
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,levelC),pRInfo.mipColor->height/pow(2,levelC),
+                  0,0,pRInfo.width/3,pRInfo.height/3,
+                  GL_COLOR_BUFFER_BIT,
+                  GL_LINEAR);
 
-       glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
-                        0,pRInfo.height/3,pRInfo.width/3,2*pRInfo.height/3,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
-      glReadBuffer(GL_COLOR_ATTACHMENT2);
-       glBlitFramebuffer(0,0,pRInfo.width,pRInfo.height,
-                        pRInfo.width/3,0,2*pRInfo.width/3,pRInfo.height/3,
-                          GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
+  pRInfo.mipNormal->use(levelN);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipNormal->handleFBOEnd);
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,levelN),pRInfo.mipColor->height/pow(2,levelN),
+                  0,pRInfo.height/3,pRInfo.width/3,2*pRInfo.height/3,
+                  GL_COLOR_BUFFER_BIT,
+                  GL_LINEAR);
 
-      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipColor->handleFBOEnd);
-      glReadBuffer(GL_COLOR_ATTACHMENT0);
+  pRInfo.mipPosition->use(levelP);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipPosition->handleFBOEnd);
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,levelP),pRInfo.mipColor->height/pow(2,levelP),
+                  pRInfo.width/3,0,2*pRInfo.width/3,pRInfo.height/3,
+                  GL_COLOR_BUFFER_BIT,
+                  GL_LINEAR);
 
-      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,2),pRInfo.mipColor->height/pow(2,2),
-                        2*pRInfo.width/3,0,2.5*pRInfo.width/3,0.5*pRInfo.height/3,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
-      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipNormal->handleFBOEnd);
-      glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
+  pRInfo.mipColor->SetLevel(0);
+  pRInfo.mipPosition->SetLevel(0);
+  pRInfo.mipNormal->SetLevel(0);
 
-      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,2),pRInfo.mipColor->height/pow(2,2),
-                        2.5*pRInfo.width/3,0,pRInfo.width,0.5*pRInfo.height/3,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
-      glBindFramebuffer(GL_READ_FRAMEBUFFER,pRInfo.mipPosition->handleFBOEnd);
-      glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-      glBlitFramebuffer(0,0,pRInfo.mipColor->width/pow(2,2),pRInfo.mipColor->height/pow(2,2),
-                        2.5*pRInfo.width/3,0.5*pRInfo.height/3,pRInfo.width,pRInfo.height/3,
-                        GL_COLOR_BUFFER_BIT,
-                        GL_LINEAR);
-
-       glBindFramebuffer(GL_FRAMEBUFFER,0);
-       pRInfo.mipColor->SetLevel(0);
-       pRInfo.mipPosition->SetLevel(0);
-       pRInfo.mipNormal->SetLevel(0);
-    
 }
 
 
