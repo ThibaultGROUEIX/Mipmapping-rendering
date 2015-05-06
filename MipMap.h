@@ -13,7 +13,7 @@
 #include <cmath>
 #include <cassert>
 #include "GLProgram.h"
-#include <vector>;
+#include <vector>
 #include <iostream>
 
 class MipMap 

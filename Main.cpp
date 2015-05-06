@@ -21,6 +21,7 @@
 #include "Mesh.h"
 #include "GLProgram.h"
 #include "render.h"
+#include "PostEffect.h"
 
 
 #include <pthread.h>
@@ -38,7 +39,7 @@ static const string DEFAULT_MESH_FILE ("material/models/man.off");
 static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pratiques - Shaders");
 static GLint window;
 static unsigned int FPS = 0;
-static bool fullScreen = false;
+//static bool fullScreen = false;
 static bool rotateLight = false;
 //static float rotateLightAngle = 0.0;
 static Camera camera;
@@ -52,10 +53,12 @@ void printImage(){
     vector<unsigned char> data (3 * h * w);
     glReadPixels(0,0,w,h,GL_RGB,GL_UNSIGNED_BYTE,&data[0]);
    
-    FILE *f = fopen("image.ppm", "w");
+    FILE *f = fopen("./imagesResult/image.ppm", "w");
     fprintf(f, "P3\n%d %d\n%d\n", w, h, 255);
-    for (int j=h-1; j>=0; j--){
-        for (int i=0; i<w; i++){
+    for (int j=h-1; j>=0; j--)
+    {
+        for (int i=0; i<w; i++)
+        {
             int d=3*w*j+3*i;
             fprintf(f,"%d %d %d ", (int)data[d],(int)data[d+1],(int)data[d+2] );
         }
@@ -98,17 +101,7 @@ void key (unsigned char keyPressed, int x, int y)
 {
   switch (keyPressed)
   {
-    case 'f':
-    if (fullScreen)
-    {
-      glutReshapeWindow (camera.getScreenWidth (), camera.getScreenHeight ());
-      fullScreen = false;
-    } 
-    else {
-      glutFullScreen ();
-      fullScreen = true;
-    }      
-    break;
+  
   case 'q':
   case 27:
       exit (0);
@@ -168,6 +161,22 @@ void key (unsigned char keyPressed, int x, int y)
     glPolygonMode (GL_FRONT_AND_BACK, mode[1] ==  GL_FILL ? GL_LINE : GL_FILL);
     break;
   }
+
+  case 'd' :
+  {
+    int h=DEFAULT_SCREENHEIGHT;
+    int w=DEFAULT_SCREENWIDTH;
+    vector<unsigned char> data (3 * h * w);
+    glReadPixels(0,0,w,h,GL_RGB,GL_UNSIGNED_BYTE,&data[0]);
+    PostEffect::add(data);
+    break;
+  }
+
+  case 'f' : 
+{
+  PostEffect::GetTotalMSE();
+  break;
+}
 
   case 'm' : 
   {
