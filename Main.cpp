@@ -45,6 +45,26 @@ static Camera camera;
 static Mesh mesh;
 Render * renderTime;
 
+void printImage(){
+    glutSwapBuffers();
+    int h=DEFAULT_SCREENHEIGHT;
+    int w=DEFAULT_SCREENWIDTH;
+    vector<unsigned char> data (3 * h * w);
+    glReadPixels(0,0,w,h,GL_RGB,GL_UNSIGNED_BYTE,&data[0]);
+   
+    FILE *f = fopen("image.ppm", "w");
+    fprintf(f, "P3\n%d %d\n%d\n", w, h, 255);
+    for (int j=h-1; j>=0; j--){
+        for (int i=0; i<w; i++){
+            int d=3*w*j+3*i;
+            fprintf(f,"%d %d %d ", (int)data[d],(int)data[d+1],(int)data[d+2] );
+        }
+    }
+
+}
+
+
+
 void printUsage () {
   std::cerr << std::endl 
 	    << appTitle << std::endl
@@ -187,6 +207,13 @@ void key (unsigned char keyPressed, int x, int y)
     }
     break;
   }
+
+  case 's' :
+  {
+    printImage();
+    std::cout << "snapShot taken" << std::endl;
+    break;
+  }
   break;
   default:
   {
@@ -256,4 +283,3 @@ int main (int argc, char ** argv) {
   glutMainLoop ();
   return 0;
 }
-
