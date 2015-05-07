@@ -48,7 +48,7 @@ static Mesh mesh;
 Render * renderTime;
 
 void printImage(){
-    glutSwapBuffers();
+    glutSwapBuffers(); 
     int h=DEFAULT_SCREENHEIGHT;
     int w=DEFAULT_SCREENWIDTH;
     vector<unsigned char> data (3 * h * w);

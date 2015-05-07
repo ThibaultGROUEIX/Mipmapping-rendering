@@ -261,6 +261,13 @@ void Render::GenerateGBufferFromObject()
       {
         unsigned int i = shapes[s].mesh.material_ids[f];
         glColor3f (materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
+        float shininessValue = materials[i].shininess;
+        float rugosity = 1./shininess;
+        if (rugosity>1.)
+        {
+          rugosity =1.;
+        }
+
       }
       for (size_t v = 0; v  < 3; v++) 
       {
@@ -533,15 +540,10 @@ bool Render::loadScene(const string & filename, const string & basepath) {
   computeSceneBoundingSphere ();
   return true;
 }
-//voir comment se passe l'interpolation des variables varying --- flat smooth poid manuel
-// quelle diff entre définir une variable dans le main et à l'extérieur ?
-//voir le cours openGL de Lille qui est pas mal
-// comment ca se passe en mémoire ?
-
-//implémenter les lumières openGL
-//charger une scène plus complexe
-
-//s'interresser au niveau de Mip Map
-//creer une touche pour enregistrer l'image à l'écran (pratique)
 
 
+// Ajouter une texture pour stocker la roughness
+// La texture (couleur diffuse)
+// Voir avec malik ce qu'il faut stocker exactement pk pas trés claire pour l'instant
+
+// Pour quoi pas faire le sujet de Ray Tracing
