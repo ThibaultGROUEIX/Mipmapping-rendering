@@ -21,6 +21,7 @@
 #include <string>
 #include "Matrices.h"
 #include "MipMap.h"
+#include "tiny_obj_loader.h"
 
 char checkError(const char* placeName);
 
@@ -66,7 +67,7 @@ public :
 	Render( RenderingInfo const &  _pRInfo, Camera * const  camera, Mesh * const  mesh);
 	//destructeur
 	~Render();
-	char init ();
+	char init (const std::string & filename);
 	char initTextureColour(GLuint* pTextureID, unsigned int width, unsigned int height);
 	char initTextureDepth(GLuint* pTextureID, unsigned int width, unsigned int height);
 
@@ -75,11 +76,22 @@ public :
 	void displayScreen(const int& levelC, const int& levelN, const int& levelP);
 
 	//void displayScreen();
-	void GenerateGBuffer();
+	void GenerateGBufferFromMesh();
+	void GenerateGBufferFromObject();
 	void ComputeBRDF(const int& _levelColor, const int& _levelPosition, const int& _levelNormal);
+	void computeSceneNormals ();
+	void computeSceneBoundingSphere ();
+	bool loadScene(const std::string & filename, const std::string & basepath = "");
+
+
 
 public :
 	RenderingInfo pRInfo;
+	static Vec3f sceneCenter;
+	static float sceneRadius;
+	static std::vector<tinyobj::shape_t> shapes;
+	static std::vector<tinyobj::material_t> materials;
+	bool loadingBool;
 
 };
 

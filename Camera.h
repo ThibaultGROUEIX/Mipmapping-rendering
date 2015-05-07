@@ -35,7 +35,7 @@ public:
   inline void setFarPlane (float newFarPlane) { farPlane = newFarPlane; }
   inline unsigned int getScreenWidth () const { return W; }
   inline unsigned int getScreenHeight () const { return H; }
-  
+  inline void setLastZoom(int y){ lastZoom = y;};
   void resize (int W, int H);
   
   void initPos ();
@@ -53,7 +53,8 @@ public:
   // Connecting typical GLUT events
   void handleMouseClickEvent (int button, int state, int x, int y);
   void handleMouseMoveEvent (int x, int y);
-  
+  void handleMouseMoveEvent2 (int x, int y);
+
 private:
   float fovAngle;
   float aspectRatio;

@@ -1,8 +1,14 @@
 #include "render.h"
 
+using namespace std;
+
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;
 static const unsigned int DEFAULT_SCREENHEIGHT = 768;
 static Matrix4 inverseTransposeProjectionMatrix = Matrix4();
+float Render::sceneRadius = 1.f;
+Vec3f Render::sceneCenter = Vec3f (0.f, 0.f, 0.f);
+std::vector<tinyobj::shape_t> Render::shapes = std::vector<tinyobj::shape_t>();
+std::vector<tinyobj::material_t> Render::materials = std::vector<tinyobj::material_t>();
 
 char checkError(const char* placeName)
 {
@@ -49,7 +55,7 @@ char checkError(const char* placeName)
 }
 
 
-char Render::init ()
+char Render::init (const string & filename)
 {
 
 
@@ -88,7 +94,8 @@ char Render::init ()
   //initialisation du Mesh
   pRInfo.camera->resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
   pRInfo.mesh->loadOFF (pRInfo.modelFileName); // Load a mesh file
-
+  unsigned int i = filename.find_last_of ("/");
+  std::cout<< "scene loaded ? (0 if true)-> " <<  loadScene (filename, filename.substr (0, i+1)) << std::endl;  
 
   try {
 
@@ -211,9 +218,9 @@ char Render::initFBO(GLuint* pBuffer, GLuint* pDepth, GLuint* pTextureNormal, GL
 }
 
 
-void Render::GenerateGBuffer()
+void Render::GenerateGBufferFromMesh()
 {
-    // Active le rendering dans le FBO (donc, dans une texture)
+  // Active le rendering dans le FBO (donc, dans une texture)
   pRInfo.firstPass->use();
   glClearColor(0.0f,0.0f,0.0f,1.0f);
 
@@ -234,6 +241,45 @@ void Render::GenerateGBuffer()
   glEnd ();
   glUseProgram(0);
 }
+
+void Render::GenerateGBufferFromObject()
+{
+  pRInfo.firstPass->use();
+  glClearColor(0.0f,0.0f,0.0f,1.0f);
+
+  glBindFramebuffer(GL_FRAMEBUFFER,pRInfo.buffer);
+  GLenum drawbuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2 };
+  glDrawBuffers(3, drawbuffers);
+  glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT );
+  glBegin (GL_TRIANGLES);
+  glColor3f (1.f, 1.f, 1.f);
+  for (size_t s = 0; s < shapes.size (); s++)
+  {
+    for (size_t f = 0; f < shapes[s].mesh.indices.size() / 3; f++) 
+    {
+      if (!materials.empty ()) 
+      {
+        unsigned int i = shapes[s].mesh.material_ids[f];
+        glColor3f (materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
+      }
+      for (size_t v = 0; v  < 3; v++) 
+      {
+        unsigned int index = 3*shapes[s].mesh.indices[3*f+v];
+        glNormal3f (shapes[s].mesh.normals[index],
+              shapes[s].mesh.normals[index+1],
+              shapes[s].mesh.normals[index+2]);
+        glVertex3f (shapes[s].mesh.positions[index],
+              shapes[s].mesh.positions[index+1],
+              shapes[s].mesh.positions[index+2]);
+      }
+    }
+  }
+  glEnd ();
+  glUseProgram(0);
+
+}
+
+
 
 void Render::ComputeBRDF(const int& _levelColor, const int& _levelPosition, const int& _levelNormal)
 {
@@ -317,7 +363,13 @@ void Render::ComputeBRDF(const int& _levelColor, const int& _levelPosition, cons
 
 void Render::drawScene ()
 {
-  GenerateGBuffer();
+  if(loadingBool)
+  {
+    GenerateGBufferFromMesh();
+  }
+  else{
+    GenerateGBufferFromObject();
+  }
   pRInfo.mipColor->raffiner(pRInfo.levelColor);
   pRInfo.mipNormal->raffiner(pRInfo.levelNormal);
   pRInfo.mipPosition->raffiner(pRInfo.levelPosition);
@@ -382,7 +434,8 @@ void Render::drawScene ()
 
 
   Render::Render(RenderingInfo const &  _pRInfo, Camera * const camera_, Mesh * const mesh_):
-pRInfo(_pRInfo)
+pRInfo(_pRInfo),
+loadingBool(true)
 {
   pRInfo.camera = camera_;
   pRInfo.mesh = mesh_;
@@ -401,6 +454,85 @@ pRInfo(_pRInfo)
 
  }
 
+
+void Render::computeSceneNormals () 
+{
+//ok recalcule les normales de chaques vertex comme somme des normales des faces adjacentes
+  for (unsigned int s = 0; s < shapes.size (); s++) 
+    if (shapes[s].mesh.normals.empty ())
+    {
+      shapes[s].mesh.normals.resize (shapes[s].mesh.positions.size (), 0.f);
+      for (size_t f = 0; f < shapes[s].mesh.indices.size() / 3; f++)
+      {
+        Vec3f q[3];
+        for (size_t v = 0; v < 3; v++) 
+        {
+          unsigned int index = 3*shapes[s].mesh.indices[3*f+v];
+          for (unsigned int i = 0; i < 3; i++)
+          q[v][i] = shapes[s].mesh.positions[index+i];
+        }
+        Vec3f e01 = q[1] - q[0];
+        Vec3f e02 = q[2] - q[0];
+        Vec3f nf = normalize (cross (e01, e02));
+        for (size_t v = 0; v < 3; v++) 
+        {
+          unsigned int index = 3*shapes[s].mesh.indices[3*f+v];
+          for (unsigned int i = 0; i < 3; i++)
+          shapes[s].mesh.normals[index+i] += nf[i];
+        }
+      }
+      for (unsigned int i = 0; i < shapes[s].mesh.normals.size () / 3; i++) 
+      {
+        Vec3f n;
+        for (unsigned int j = 0; j < 3; j++)
+        {
+          n[j] = shapes[s].mesh.normals[3*i+j];
+        }
+        n.normalize ();
+        for (unsigned int j = 0; j < 3; j++)
+        {
+          shapes[s].mesh.normals[3*i+j] = n[j];
+        }     
+      } 
+    }
+}
+
+void Render::computeSceneBoundingSphere () {
+  sceneCenter = Vec3f (0.f, 0.f, 0.f);
+  unsigned int count = 0;
+  for (unsigned int s = 0; s < shapes.size (); s++)
+  for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
+    sceneCenter += Vec3f (shapes[s].mesh.positions[3*p],
+              shapes[s].mesh.positions[3*p+1],
+              shapes[s].mesh.positions[3*p+2]);
+    count++;
+  }
+  sceneCenter /= count;
+  sceneRadius = 0.f;
+  for (unsigned int s = 0; s < shapes.size (); s++)
+    for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
+      float d = dist (sceneCenter, Vec3f (shapes[s].mesh.positions[3*p],
+                      shapes[s].mesh.positions[3*p+1],
+                      shapes[s].mesh.positions[3*p+2]));
+      if (d > sceneRadius)
+    sceneRadius = d;
+    }
+}
+
+// Loads an OBJ file using tinyOBJ (http://syoyo.github.io/tinyobjloader/)
+bool Render::loadScene(const string & filename, const string & basepath) {
+  shapes.clear ();
+  materials.clear ();
+  std::cout << "Loading " << filename << std::endl;
+  std::string err = tinyobj::LoadObj(shapes, materials, filename.c_str (), basepath.c_str ());
+  if (!err.empty()) {
+    std::cerr << err << std::endl;
+    return false;
+  }
+  computeSceneNormals ();
+  computeSceneBoundingSphere ();
+  return true;
+}
 //voir comment se passe l'interpolation des variables varying --- flat smooth poid manuel
 // quelle diff entre définir une variable dans le main et à l'extérieur ?
 //voir le cours openGL de Lille qui est pas mal

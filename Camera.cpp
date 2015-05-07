@@ -252,6 +252,13 @@ void Camera::handleMouseMoveEvent (int x, int y) {
     }
 }
 
+void Camera::handleMouseMoveEvent2 (int x, int y) {
+
+        zoom (float (y-lastZoom)/getScreenHeight ());
+        lastZoom = y;
+    
+}
+
 // ---------------------------------------------
 // BEGIN : Code from SGI
 // ---------------------------------------------

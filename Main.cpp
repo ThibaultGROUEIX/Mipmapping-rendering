@@ -35,12 +35,13 @@ using namespace std;
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;
 static const unsigned int DEFAULT_SCREENHEIGHT = 768;
 static const string DEFAULT_MESH_FILE ("material/models/man.off");
-
+static const char * DEFAULT_SCENE_FILENAME = "scenes/dabrovic-sponza/sponza.obj";
 static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pratiques - Shaders");
 static GLint window;
 static unsigned int FPS = 0;
 //static bool fullScreen = false;
 static bool rotateLight = false;
+static bool zoomBool = true;
 //static float rotateLightAngle = 0.0;
 static Camera camera;
 static Mesh mesh;
@@ -177,7 +178,11 @@ void key (unsigned char keyPressed, int x, int y)
   PostEffect::GetTotalMSE();
   break;
 }
-
+  case 'b' : 
+{ 
+  zoomBool = !zoomBool;
+  break;
+}
   case 'm' : 
   {
     std::cout << "Voulez vous modifier les paramètres de MipMap(y/n)?" << std::endl;
@@ -190,7 +195,7 @@ void key (unsigned char keyPressed, int x, int y)
       std::cout << "Level of mipmap in texture Position used for rendering : " << renderTime->pRInfo.levelPosition << std::endl;
 
     }
-    else
+    else 
     {
         string mot;
         std::cout<<"Quelle paramètre ? position/color/normal" << std::endl;
@@ -224,6 +229,13 @@ void key (unsigned char keyPressed, int x, int y)
     break;
   }
   break;
+
+  case 'n' :
+  { 
+    std::cout << "charnging rendered scene" << std::endl;
+    renderTime->loadingBool=!renderTime->loadingBool;
+    break;
+  }
   default:
   {
     //printUsage ();
@@ -235,11 +247,18 @@ void key (unsigned char keyPressed, int x, int y)
 }
 
 void mouse (int button, int state, int x, int y) {
+  camera.setLastZoom(y);
   camera.handleMouseClickEvent (button, state, x, y);
 }
 
 void motion (int x, int y) {
-  camera.handleMouseMoveEvent (x, y);
+  if (zoomBool)
+  {
+    camera.handleMouseMoveEvent (x, y);
+  }
+  else{
+    camera.handleMouseMoveEvent2(x,y);
+  }
 }
 
 void idle () {
@@ -280,7 +299,7 @@ int main (int argc, char ** argv) {
   glutInitWindowSize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
   window = glutCreateWindow (appTitle.c_str ());
   std::cout << "init de glew renvoie : " << glewInit() << std::endl;
-  renderTime->init ();
+  renderTime->init (DEFAULT_SCENE_FILENAME);
   std::cout << "Initialisation réussie" << std::endl;
   glutIdleFunc (idle);
   glutReshapeFunc (reshape);

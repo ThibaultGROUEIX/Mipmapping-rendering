@@ -30,7 +30,7 @@ void main (void)
   //   positionFromDepth = p2;
   vec4 fragColor = vec4(0.0,0.0,0.0,1.0);
 
-  if(albedo.x>0.1)
+  if(albedo.x>0.)
   {
   vec4 n =  normal; //2.0 *normal - vec4(1.0, 1.0, 1.0, 0.0); 
   vec4 l =  (gl_ModelViewMatrix*lightPos - positionTheorique);
