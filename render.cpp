@@ -262,7 +262,7 @@ void Render::GenerateGBufferFromObject()
         unsigned int i = shapes[s].mesh.material_ids[f];
         glColor3f (materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
         float shininessValue = materials[i].shininess;
-        float rugosity = 1./shininess;
+        float rugosity = 1./shininessValue;
         if (rugosity>1.)
         {
           rugosity =1.;

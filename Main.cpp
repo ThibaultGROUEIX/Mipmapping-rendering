@@ -232,7 +232,7 @@ void key (unsigned char keyPressed, int x, int y)
 
   case 'n' :
   { 
-    std::cout << "charnging rendered scene" << std::endl;
+    std::cout << "changing rendered scene" << std::endl;
     renderTime->loadingBool=!renderTime->loadingBool;
     break;
   }
