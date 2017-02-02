@@ -1,3 +1,3 @@
-# MyProject
+# Small project
 
-The goal of this project is to efficiently use mipmapping in rendering.
+With this code, one can efficiently display the G-buffer at different scale of mipmapping.
