@@ -10,7 +10,8 @@ $ ./main
 
 ### Usage
 
-Change the view point with the mouse
+Change the view point with the mouse. (the man is originally between the viewpoint and the light so he will appear black as there is no reflexion. To view the man, we have to change the viewpoint a tiny bit).
+
 Strike "m" key to change the level of mipmapping of one frame of the G-buffer (can be position, normal, or albedo)
 Observe the change in the rendered view (you can observe a nice specular spot)
 
