@@ -34,8 +34,8 @@ using namespace std;
 
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;
 static const unsigned int DEFAULT_SCREENHEIGHT = 768;
-static const string DEFAULT_MESH_FILE ("material/models/man.off");
-static const char * DEFAULT_SCENE_FILENAME = "scenes/dabrovic-sponza/sponza.obj";
+static const string DEFAULT_MESH_FILE ("../material/models/man.off");
+static const char * DEFAULT_SCENE_FILENAME = "../scenes/dabrovic-sponza/sponza.obj";
 static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pratiques - Shaders");
 static GLint window;
 static unsigned int FPS = 0;
@@ -54,7 +54,7 @@ void printImage(){
     vector<unsigned char> data (3 * h * w);
     glReadPixels(0,0,w,h,GL_RGB,GL_UNSIGNED_BYTE,&data[0]);
    
-    FILE *f = fopen("./imagesResult/image.ppm", "w");
+    FILE *f = fopen("../imagesResult/image.ppm", "w");
     fprintf(f, "P3\n%d %d\n%d\n", w, h, 255);
     for (int j=h-1; j>=0; j--)
     {

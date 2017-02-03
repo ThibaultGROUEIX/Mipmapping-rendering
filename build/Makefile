@@ -1,24 +1,27 @@
 CIBLE = main
-SRCS =  Main.cpp Camera.cpp Mesh.cpp GLProgram.cpp render.cpp Matrices.cpp MipMap.cpp PostEffect.cpp tiny_obj_loader.cpp
-OPENGL_PATH = /usr/lib/nvidia-346/ # change this for your own environment
+SRCS =  ../src/Main.cpp ../src/Camera.cpp ../src/Mesh.cpp ../src/GLProgram.cpp ../src/render.cpp ../src/Matrices.cpp ../src/MipMap.cpp ../src/PostEffect.cpp ../src/tiny_obj_loader.cpp
+OPENGL_PATH = /usr/lib/nvidia/ # change this for your own environment
 LIBS = -L$(OPENGL_PATH) -lglut -lGLU -lGL -lGLEW -lm -pthread
 #INCLUDE = ~/Documents/stage de recherche Telecom/TP_Shaders/glm
 
 CC = g+
 CPP = g++
 
-FLAGS = -Wall -O2 -g #-L/usr/lib/nvidia-331/lib 
+FLAGS = -Wall -O2 -g #-L/usr/lib/nvidia/lib 
 
 CFLAGS = $(FLAGS)
 CXXFLAGS = $(FLAGS)
 
 OBJS = $(SRCS:.cpp=.o)   
 
-$(CIBLE): $(OBJS)
+build: $(OBJS)
 	g++ $(LDFLAGS) -o $(CIBLE) $(OBJS) $(LIBS) # -I$(INCLUDE)
 clean:
 	rm -f  *~  $(CIBLE) $(OBJS)
 
+default:
+	build
+	clean
 PostEffect.o: PostEffect.cpp PostEffect.h
 GLProgram.o: GLProgram.cpp GLProgram.h
 MipMap.o : MipMap.cpp MipMap.h GLProgram.h

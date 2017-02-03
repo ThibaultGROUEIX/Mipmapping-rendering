@@ -83,7 +83,7 @@
         }
 
         void Shader::loadFromFile (const std::string & filename) {
-            _filename = "./shader/" + filename;
+            _filename = "../shader/" + filename;
             std::ifstream in (_filename.c_str ());
             if (!in)
                 throw Exception ("Error loading shader source file: " + _filename);
